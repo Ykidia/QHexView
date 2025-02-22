@@ -8,6 +8,15 @@
 #include <QtEndian>
 #include <limits>
 
+#if defined(_WIN32) && _MSC_VER <= 1916 // v141_xp
+#include <ctype.h>
+namespace std {
+using ::tolower;
+}
+#else
+#include <cctype>
+#endif
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #define QHEXVIEW_VARIANT_EQ(x, t) ((x).metaType().id() == QMetaType::Q##t)
 #else
