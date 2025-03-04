@@ -18,7 +18,7 @@ QString QHexDelegate::asciiHeader(const QHexView* hexview) const {
     return QString();
 }
 
-void QHexDelegate::renderAddress(quint64 address, QTextCharFormat& cf,
+void QHexDelegate::renderAddress(quint64 address, QHexCharFormat& cf,
                                  const QHexView* hexview) const {
     Q_UNUSED(address);
     Q_UNUSED(hexview);
@@ -26,14 +26,14 @@ void QHexDelegate::renderAddress(quint64 address, QTextCharFormat& cf,
     Q_UNUSED(hexview);
 }
 
-void QHexDelegate::renderHeader(QTextBlockFormat& bf,
+void QHexDelegate::renderHeader(QHexCharFormat& cf,
                                 const QHexView* hexview) const {
-    Q_UNUSED(bf);
+    Q_UNUSED(cf);
     Q_UNUSED(hexview);
 }
 
 void QHexDelegate::renderHeaderPart(const QString& s, QHexArea area,
-                                    QTextCharFormat& cf,
+                                    QHexCharFormat& cf,
                                     const QHexView* hexview) const {
     Q_UNUSED(s);
     Q_UNUSED(area);
@@ -41,7 +41,7 @@ void QHexDelegate::renderHeaderPart(const QString& s, QHexArea area,
     Q_UNUSED(hexview);
 }
 
-bool QHexDelegate::render(quint64 offset, quint8 b, QTextCharFormat& outcf,
+bool QHexDelegate::render(quint64 offset, quint8 b, QHexCharFormat& outcf,
                           const QHexView* hexview) const {
     Q_UNUSED(offset);
     Q_UNUSED(b);

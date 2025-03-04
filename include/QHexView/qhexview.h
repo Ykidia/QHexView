@@ -9,7 +9,6 @@
 #include <QHexView/model/qhexdocument.h>
 #include <QList>
 #include <QRectF>
-#include <QTextCharFormat>
 
 #if defined(QHEXVIEW_ENABLE_DIALOGS)
 class HexFindDialog;
@@ -17,6 +16,21 @@ class HexFindDialog;
 
 class QHexView: public QAbstractScrollArea {
     Q_OBJECT
+
+    struct PaintContext {
+        QPainter* painter;
+        const QFontMetricsF* fontmetrics;
+        QColor underline;
+        qreal cellwidth, lineheight;
+        qreal x, y;
+
+        explicit PaintContext(QPainter* p, const QFontMetricsF* fm, qreal cw,
+                              qreal lh);
+        void drawText(const QString& s, const QHexCharFormat& cf);
+        void drawText(const QString& s);
+        void fillLine(QColor c) const;
+        void newLine();
+    };
 
 public:
     enum class CopyMode { Visual, HexArraySquare, HexArrayCurly, HexArrayChar };
@@ -109,18 +123,18 @@ public Q_SLOTS:
     void setAutoWidth(bool r);
 
 private:
-    void paint(QPainter* painter) const;
+    void paint(QPainter* p) const;
     void checkOptions();
     void checkState();
     void checkAndUpdate(bool calccolumns = false);
     void calcColumns();
     void ensureVisible();
     void drawSeparators(QPainter* p) const;
-    void drawHeader(QTextCursor& c) const;
-    void drawDocument(QTextCursor& c) const;
-    QTextCharFormat drawFormat(QTextCursor& c, quint8 b, const QString& s,
-                               QHexArea area, qint64 line, qint64 column,
-                               bool applyformat) const;
+    void drawHeader(PaintContext* ctx) const;
+    void drawDocument(PaintContext* ctx) const;
+    QHexCharFormat drawFormat(PaintContext* ctx, quint8 b, const QString& s,
+                              QHexArea area, qint64 line, qint64 column,
+                              bool applyformat) const;
     unsigned int calcAddressWidth() const;
     int visibleLines(bool absolute = false) const;
     qint64 getLastColumn(qint64 line) const;
