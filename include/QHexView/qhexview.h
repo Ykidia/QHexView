@@ -18,14 +18,14 @@ class QHexView: public QAbstractScrollArea {
     Q_OBJECT
 
     struct PaintContext {
+        const QHexView* hexview;
         QPainter* painter;
         const QFontMetricsF* fontmetrics;
         QColor underline;
-        qreal cellwidth, lineheight;
         qreal x, y;
 
-        explicit PaintContext(QPainter* p, const QFontMetricsF* fm, qreal cw,
-                              qreal lh);
+        explicit PaintContext(const QHexView* hv, QPainter* p,
+                              const QFontMetricsF* fm);
         void drawText(const QString& s, const QHexCharFormat& cf);
         void drawText(const QString& s);
         void fillLine(QColor c) const;

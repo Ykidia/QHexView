@@ -26,9 +26,9 @@
 #define qhexview_fmtprint(fmt, ...)
 #endif
 
-QHexView::PaintContext::PaintContext(QPainter* p, const QFontMetricsF* fm,
-                                     qreal cw, qreal lh)
-    : painter{p}, fontmetrics{fm}, cellwidth{cw}, lineheight{lh}, x{0}, y{0} {
+QHexView::PaintContext::PaintContext(const QHexView* hv, QPainter* p,
+                                     const QFontMetricsF* fm)
+    : hexview{hv}, painter{p}, fontmetrics{fm}, x{0}, y{0} {
     this->painter->setBackgroundMode(Qt::OpaqueMode);
 }
 
@@ -56,7 +56,7 @@ void QHexView::PaintContext::drawText(const QString& s) {
         this->painter->fillRect(QRectF{this->x, yt, w, 2.0}, this->underline);
     }
 
-    x += this->cellwidth * s.length();
+    x += this->hexview->cellWidth() * s.length();
 }
 
 void QHexView::PaintContext::fillLine(QColor c) const {
@@ -64,15 +64,15 @@ void QHexView::PaintContext::fillLine(QColor c) const {
         QRectF{
             this->x,
             this->y,
-            static_cast<qreal>(this->painter->viewport().width()),
-            this->lineheight,
+            this->hexview->endColumnX(),
+            this->hexview->lineHeight(),
         },
         c);
 }
 
 void QHexView::PaintContext::newLine() {
     x = 0;
-    y += this->lineheight;
+    y += this->hexview->lineHeight();
 }
 
 QHexView::QHexView(QWidget* parent)
@@ -457,7 +457,7 @@ void QHexView::setAutoWidth(bool r) {
 }
 
 void QHexView::paint(QPainter* p) const {
-    PaintContext ctx{p, &m_fontmetrics, this->cellWidth(), this->lineHeight()};
+    PaintContext ctx{this, p, &m_fontmetrics};
     this->drawHeader(&ctx);
     this->drawDocument(&ctx);
     this->drawSeparators(p);
@@ -1532,7 +1532,8 @@ void QHexView::wheelEvent(QWheelEvent* e) {
     e->ignore();
 
 #if defined(Q_OS_OSX)
-    // In macOS scrollbar invisibility should not prevent scrolling from working
+    // In macOS scrollbar invisibility should not prevent scrolling from
+    // working
     if(!m_hexdocument)
         return;
 #else
@@ -1541,9 +1542,10 @@ void QHexView::wheelEvent(QWheelEvent* e) {
 #endif
 
     // https://doc.qt.io/qt-6/qwheelevent.html
-    // "Returns the relative amount that the wheel was rotated, in eighths of a
-    // degree." "Most mouse types work in steps of 15 degrees, in which case the
-    // delta value is a multiple of 120; i.e., 120 units * 1/8 = 15 degrees."
+    // "Returns the relative amount that the wheel was rotated, in eighths
+    // of a degree." "Most mouse types work in steps of 15 degrees, in which
+    // case the delta value is a multiple of 120; i.e., 120 units * 1/8 = 15
+    // degrees."
     int const ydelta = e->angleDelta().y();
     if(0 != ydelta) {
         int const ydeltaAbsolute = qAbs(ydelta);
