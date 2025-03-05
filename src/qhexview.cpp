@@ -1446,6 +1446,7 @@ void QHexView::paintEvent(QPaintEvent*) {
         return;
 
     QPainter painter(this->viewport());
+    painter.translate(-this->horizontalScrollBar()->value(), 0);
     painter.setFont(this->font());
 
     if(m_hexdelegate)
