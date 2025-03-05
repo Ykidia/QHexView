@@ -512,18 +512,17 @@ void QHexView::checkState() {
     this->verticalScrollBar()->setPageStep(vislines - 1);
     this->verticalScrollBar()->setSingleStep(m_options.scrollsteps);
 
-    int vw = this->verticalScrollBar()->isVisible()
-                 ? this->verticalScrollBar()->width()
-                 : 0;
+    qreal vw = this->verticalScrollBar()->isVisible()
+                   ? this->verticalScrollBar()->width()
+                   : 0;
 
-    static int oldmw = 0;
-    if(!oldmw)
-        oldmw = this->maximumWidth();
-    this->setMaximumWidth(m_autowidth ? qCeil(this->endColumnX() + vw + 3)
-                                      : oldmw);
+    qreal pad = vw + this->cellWidth();
+
+    this->setMaximumWidth(m_autowidth ? qCeil(this->endColumnX() + pad)
+                                      : this->maximumWidth());
 
     this->horizontalScrollBar()->setRange(
-        0, qMax<int>(0, this->endColumnX() - this->width() + vw + 3));
+        0, qMax<int>(0, qCeil(this->endColumnX() - this->width() + pad)));
     this->horizontalScrollBar()->setPageStep(this->width());
 }
 
