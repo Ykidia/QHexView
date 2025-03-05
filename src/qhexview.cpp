@@ -41,18 +41,18 @@ void QHexView::PaintContext::drawText(const QString& s,
 }
 
 void QHexView::PaintContext::drawText(const QString& s) {
-    qreal yt = this->y + this->fontmetrics->ascent();
-    this->painter->drawText(this->x, yt, s);
-
-    if(this->underline.isValid()) {
-        yt += (this->fontmetrics->descent() / 2.0);
-
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        qreal w = this->fontmetrics->horizontalAdvance(s);
+    qreal w = this->fontmetrics->horizontalAdvance(s);
 #else
-        qreal w = this->fontmetrics->width(s);
+    qreal w = this->fontmetrics->width(s);
 #endif
 
+    this->painter->drawText(
+        QRectF{this->x, this->y, w, this->hexview->lineHeight()}, 0, s);
+
+    if(this->underline.isValid()) {
+        qreal yt = this->y + (this->fontmetrics->height() -
+                              (this->fontmetrics->descent() / 2.0));
         this->painter->fillRect(QRectF{this->x, yt, w, 2.0}, this->underline);
     }
 
