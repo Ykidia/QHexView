@@ -28,15 +28,12 @@
 
 QHexView::PaintContext::PaintContext(const QHexView* hv, QPainter* p,
                                      const QFontMetricsF* fm)
-    : hexview{hv}, painter{p}, fontmetrics{fm}, x{0}, y{0} {
-    this->painter->setBackgroundMode(Qt::OpaqueMode);
-}
+    : hexview{hv}, painter{p}, fontmetrics{fm}, x{0}, y{0} {}
 
 void QHexView::PaintContext::drawText(const QString& s,
                                       const QHexCharFormat& cf) {
-    this->painter->setPen(cf.foreground);
-    this->painter->setBackground(cf.background);
-    this->underline = cf.underline;
+
+    this->format = cf;
     this->drawText(s);
 }
 
@@ -47,13 +44,19 @@ void QHexView::PaintContext::drawText(const QString& s) {
     qreal w = this->fontmetrics->width(s);
 #endif
 
-    this->painter->drawText(
-        QRectF{this->x, this->y, w, this->hexview->lineHeight()}, 0, s);
+    QRectF r = {this->x, this->y, w, this->hexview->lineHeight()};
 
-    if(this->underline.isValid()) {
+    if(this->format.background.isValid())
+        this->painter->fillRect(r, this->format.background);
+
+    this->painter->setPen(this->format.foreground);
+    this->painter->drawText(r, 0, s);
+
+    if(this->format.underline.isValid()) {
         qreal yt = this->y + (this->fontmetrics->height() -
                               (this->fontmetrics->descent() / 2.0));
-        this->painter->fillRect(QRectF{this->x, yt, w, 2.0}, this->underline);
+        this->painter->fillRect(QRectF{this->x, yt, w, 2.0},
+                                this->format.underline);
     }
 
     x += this->hexview->cellWidth() * s.length();

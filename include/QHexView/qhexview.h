@@ -21,7 +21,7 @@ class QHexView: public QAbstractScrollArea {
         const QHexView* hexview;
         QPainter* painter;
         const QFontMetricsF* fontmetrics;
-        QColor underline;
+        QHexCharFormat format;
         qreal x, y;
 
         explicit PaintContext(const QHexView* hv, QPainter* p,
