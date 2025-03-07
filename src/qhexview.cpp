@@ -614,9 +614,16 @@ void QHexView::drawHeader(PaintContext* ctx) const {
 
     const auto RESET_FORMAT = [&](const QHexOptions& options,
                                   QHexCharFormat& cf) {
-        cf = hcf;
-        cf.foreground = options.headercolor;
+        cf = {};
+        cf.foreground =
+            hcf.foreground.isValid() ? hcf.foreground : options.headercolor;
     };
+
+    if(hcf.background.isValid()) { // Draw background directly
+        ctx->painter->fillRect(QRectF(ctx->x, ctx->y, this->viewport()->width(),
+                                      ctx->hexview->lineHeight()),
+                               hcf.background);
+    }
 
     QString addresslabel;
     if(m_hexdelegate)
