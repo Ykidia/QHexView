@@ -521,11 +521,12 @@ void QHexView::checkState() {
 
     qreal pad = vw + this->cellWidth();
 
-    this->setMaximumWidth(m_autowidth ? qCeil(this->endColumnX() + pad)
+    this->setMaximumWidth(m_autowidth ? qCeil(this->endColumnX()) + qCeil(pad)
                                       : this->maximumWidth());
 
     this->horizontalScrollBar()->setRange(
-        0, qMax<int>(0, qCeil(this->endColumnX() - this->width() + pad)));
+        0,
+        qMax<int>(0, qCeil(this->endColumnX()) - this->width() + qCeil(pad)));
     this->horizontalScrollBar()->setPageStep(this->width());
 }
 
