@@ -145,6 +145,7 @@ private:
     qreal asciiColumnX() const;
     qreal endColumnX() const;
     qreal cellWidth() const;
+    qreal lineWidth() const;
     qreal lineHeight() const;
     qint64 positionFromLineCol(qint64 line, qint64 col) const;
     QHexPosition positionFromPoint(QPoint pt) const;

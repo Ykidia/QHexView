@@ -122,14 +122,13 @@ QHexView::QHexView(QWidget* parent)
 
 QRectF QHexView::headerRect() const {
     if(m_options.hasFlag(QHexFlags::NoHeader))
-        return QRectF();
+        return {};
 
-    return QRectF(0, 0, this->endColumnX(), this->lineHeight());
+    return QRectF(0, 0, this->lineWidth(), this->lineHeight());
 }
 
 QRectF QHexView::addressRect() const {
     qreal y = m_options.hasFlag(QHexFlags::NoHeader) ? 0 : this->lineHeight();
-
     return QRectF(0, y, this->endColumnX(), this->height() - y);
 }
 
@@ -579,7 +578,7 @@ void QHexView::drawSeparators(QPainter* p) const {
                   : this->palette().color(QPalette::Dark));
 
     if(m_options.hasFlag(QHexFlags::HSeparator)) {
-        QLineF l(0, m_fontmetrics.lineSpacing(), this->endColumnX(),
+        QLineF l(0, m_fontmetrics.lineSpacing(), this->lineWidth() - 1,
                  m_fontmetrics.lineSpacing());
         if(!m_hexdelegate || !m_hexdelegate->paintSeparator(p, l, this))
             p->drawLine(l);
@@ -619,11 +618,8 @@ void QHexView::drawHeader(PaintContext* ctx) const {
             hcf.foreground.isValid() ? hcf.foreground : options.headercolor;
     };
 
-    if(hcf.background.isValid()) { // Draw background directly
-        ctx->painter->fillRect(QRectF(ctx->x, ctx->y, this->viewport()->width(),
-                                      ctx->hexview->lineHeight()),
-                               hcf.background);
-    }
+    if(hcf.background.isValid()) // Draw background directly
+        ctx->painter->fillRect(this->headerRect(), hcf.background);
 
     QString addresslabel;
     if(m_hexdelegate)
@@ -979,6 +975,10 @@ qreal QHexView::cellWidth() const {
 #else
     return m_fontmetrics.width(" ");
 #endif
+}
+
+qreal QHexView::lineWidth() const {
+    return qCeil(this->endColumnX()) + qCeil(this->cellWidth());
 }
 
 qreal QHexView::lineHeight() const { return m_fontmetrics.height(); }
