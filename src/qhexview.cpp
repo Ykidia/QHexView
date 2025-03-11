@@ -73,10 +73,24 @@ void QHexView::PaintContext::fillLine(QColor c) const {
         c);
 }
 
-void QHexView::PaintContext::newLine() {
+void QHexView::PaintContext::setLine(int l) {
+    x = 0;
+    y = l * this->hexview->lineHeight();
+}
+
+void QHexView::PaintContext::clearFormat() { this->format = {}; }
+
+void QHexView::PaintContext::nextLine() {
     x = 0;
     y += this->hexview->lineHeight();
 }
+
+void QHexView::PaintContext::prevLine() {
+    x = 0;
+    y = qMax(0.0, y - this->hexview->lineHeight());
+}
+
+void QHexView::PaintContext::advanceX() { x += this->hexview->cellWidth(); }
 
 QHexView::QHexView(QWidget* parent)
     : QAbstractScrollArea(parent), m_fontmetrics(this->font()) {
@@ -632,8 +646,10 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(m_hexdelegate)
         m_hexdelegate->renderHeaderPart(addresslabel, QHexArea::Address, cf,
                                         this);
-    ctx->drawText(
-        " " + QHexView::reduced(addresslabel, this->addressWidth()) + " ", cf);
+    ctx->advanceX();
+    ctx->drawText(QHexView::reduced(addresslabel, this->addressWidth()), cf);
+    ctx->advanceX();
+    ctx->clearFormat();
 
     if(m_hexdelegate)
         RESET_FORMAT(m_options, cf);
@@ -723,7 +739,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
                       " ");
     }
 
-    ctx->newLine();
+    ctx->nextLine();
 }
 
 void QHexView::drawDocument(PaintContext* ctx) const {
@@ -763,10 +779,13 @@ void QHexView::drawDocument(PaintContext* ctx) const {
             acf.foreground = this->palette().color(QPalette::HighlightedText);
         }
 
-        ctx->drawText(" " + addrstr + " ", acf);
+        ctx->advanceX();
+        ctx->drawText(addrstr, acf);
+        ctx->advanceX();
 
         QByteArray linebytes = this->getLine(line);
-        ctx->drawText(" ", {});
+        ctx->advanceX();
+        ctx->clearFormat();
 
         // Hex Part
         for(unsigned int column = 0u; column < m_options.linelength;) {
@@ -825,7 +844,7 @@ void QHexView::drawDocument(PaintContext* ctx) const {
                              static_cast<int>(column) < linebytes.size());
         }
 
-        ctx->newLine();
+        ctx->nextLine();
         if(m_hexdocument->isEmpty())
             break;
     }
@@ -978,7 +997,7 @@ qreal QHexView::cellWidth() const {
 }
 
 qreal QHexView::lineWidth() const {
-    return qCeil(this->endColumnX()) + qCeil(this->cellWidth());
+    return this->endColumnX() + this->cellWidth();
 }
 
 qreal QHexView::lineHeight() const { return m_fontmetrics.height(); }
