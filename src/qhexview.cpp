@@ -779,9 +779,14 @@ void QHexView::drawDocument(PaintContext* ctx) const {
             acf.foreground = this->palette().color(QPalette::HighlightedText);
         }
 
-        ctx->advanceX();
-        ctx->drawText(addrstr, acf);
-        ctx->advanceX();
+        if(m_options.hasFlag(QHexFlags::PaddedAddress)) {
+            ctx->drawText(" " + addrstr + " ", acf);
+        }
+        else {
+            ctx->advanceX();
+            ctx->drawText(addrstr, acf);
+            ctx->advanceX();
+        }
 
         QByteArray linebytes = this->getLine(line);
         ctx->advanceX();
