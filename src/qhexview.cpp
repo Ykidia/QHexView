@@ -591,7 +591,8 @@ void QHexView::drawSeparators(QPainter* p) const {
                   ? m_options.separatorcolor
                   : this->palette().color(QPalette::Dark));
 
-    if(m_options.hasFlag(QHexFlags::HSeparator)) {
+    if(!m_options.hasFlag(QHexFlags::NoHeader) &&
+       m_options.hasFlag(QHexFlags::HSeparator)) {
         QLineF l(0, m_fontmetrics.lineSpacing(), this->lineWidth() - 1,
                  m_fontmetrics.lineSpacing());
         if(!m_hexdelegate || !m_hexdelegate->paintSeparator(p, l, this))
@@ -746,12 +747,11 @@ void QHexView::drawDocument(PaintContext* ctx) const {
     if(!m_hexdocument)
         return;
 
-    qreal y = !m_options.hasFlag(QHexFlags::NoHeader) ? this->lineHeight() : 0;
     quint64 line = static_cast<quint64>(this->verticalScrollBar()->value());
 
     for(qint64 l = 0; m_hexdocument->isEmpty() ||
                       (line < this->lines() && l < this->visibleLines());
-        l++, line++, y += this->lineHeight()) {
+        l++, line++) {
 
         if(m_options.linealternatebackground.isValid() && line % 2)
             ctx->fillLine(m_options.linealternatebackground);
