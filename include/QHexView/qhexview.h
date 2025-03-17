@@ -136,6 +136,11 @@ private:
     void drawSeparators(QPainter* p) const;
     void drawHeader(PaintContext* ctx) const;
     void drawDocument(PaintContext* ctx) const;
+    void drawAddressPart(PaintContext* ctx, quint64 line) const;
+    void drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
+                     quint64 line) const;
+    void drawAsciiPart(PaintContext* ctx, const QByteArray& linebytes,
+                       quint64 line) const;
     QHexCharFormat drawFormat(PaintContext* ctx, quint8 b, const QString& s,
                               QHexArea area, qint64 line, qint64 column,
                               bool applyformat) const;
@@ -157,6 +162,7 @@ private:
     QHexArea areaFromPoint(QPoint pt) const;
     void moveNext(bool select = false);
     void movePrevious(bool select = false);
+    bool atBottom() const;
     bool keyPressMove(QKeyEvent* e);
     bool keyPressTextInput(QKeyEvent* e);
     bool keyPressAction(QKeyEvent* e);

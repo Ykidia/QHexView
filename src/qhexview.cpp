@@ -67,7 +67,7 @@ void QHexView::PaintContext::fillLine(QColor c) const {
         QRectF{
             this->x,
             this->y,
-            this->hexview->endColumnX(),
+            this->hexview->lineWidth(),
             this->hexview->lineHeight(),
         },
         c);
@@ -747,111 +747,121 @@ void QHexView::drawDocument(PaintContext* ctx) const {
     if(!m_hexdocument)
         return;
 
+    auto style_background = [&](qint64 line) {
+        if(m_options.linealternatebackground.isValid() && line % 2)
+            ctx->fillLine(m_options.linealternatebackground);
+        else if(m_options.linebackground.isValid() && !(line % 2))
+            ctx->fillLine(m_options.linebackground);
+    };
+
     quint64 line = static_cast<quint64>(this->verticalScrollBar()->value());
 
     for(qint64 l = 0; m_hexdocument->isEmpty() ||
                       (line < this->lines() && l < this->visibleLines());
         l++, line++) {
 
-        if(m_options.linealternatebackground.isValid() && line % 2)
-            ctx->fillLine(m_options.linealternatebackground);
-        else if(m_options.linebackground.isValid() && !(line % 2))
-            ctx->fillLine(m_options.linebackground);
-
-        quint64 address = line * m_options.linelength + this->baseAddress();
-        QString addrstr = QString::number(address, 16)
-                              .rightJustified(this->addressWidth(), '0')
-                              .toUpper();
-
-        // Address Part
-        QHexCharFormat acf;
-        acf.foreground = m_options.headercolor;
-
-        if(m_options.hasFlag(QHexFlags::StyledAddress))
-            acf.background = this->palette().color(QPalette::Window);
-
-        if(m_hexdelegate)
-            m_hexdelegate->renderAddress(address, acf, this);
-
-        if(m_hexcursor->line() == static_cast<qint64>(line) &&
-           m_options.hasFlag(QHexFlags::HighlightAddress)) {
-            acf.background = this->palette().color(QPalette::Highlight);
-            acf.foreground = this->palette().color(QPalette::HighlightedText);
-        }
-
-        if(m_options.hasFlag(QHexFlags::PaddedAddress)) {
-            ctx->drawText(" " + addrstr + " ", acf);
-        }
-        else {
-            ctx->advanceX();
-            ctx->drawText(addrstr, acf);
-            ctx->advanceX();
-        }
+        style_background(line);
+        this->drawAddressPart(ctx, line);
 
         QByteArray linebytes = this->getLine(line);
-        ctx->advanceX();
-        ctx->clearFormat();
-
-        // Hex Part
-        for(unsigned int column = 0u; column < m_options.linelength;) {
-            QHexCharFormat cf;
-
-            for(unsigned int byteidx = 0u; byteidx < m_options.grouplength;
-                byteidx++, column++) {
-                QString s;
-                quint8 b{};
-
-                if(m_hexdocument->accept(
-                       this->positionFromLineCol(line, column))) {
-                    s = linebytes.isEmpty() ||
-                                column >= static_cast<qint64>(linebytes.size())
-                            ? "  "
-                            : QString(QHexUtils::toHex(linebytes.mid(column, 1))
-                                          .toUpper());
-                    b = static_cast<int>(column) < linebytes.size()
-                            ? linebytes.at(column)
-                            : 0x00;
-                }
-                else
-                    s = QString(m_options.invalidchar).repeated(2);
-
-                cf = this->drawFormat(ctx, b, s, QHexArea::Hex, line, column,
-                                      static_cast<int>(column) <
-                                          linebytes.size());
-            }
-
-            ctx->drawText(" ", cf);
-        }
-
-        ctx->drawText(" ", {});
-
-        // Ascii Part
-        for(unsigned int column = 0u; column < m_options.linelength; column++) {
-            QString s;
-            quint8 b{};
-
-            if(m_hexdocument->accept(this->positionFromLineCol(line, column))) {
-                s = linebytes.isEmpty() ||
-                            column >= static_cast<qint64>(linebytes.size())
-                        ? QChar(' ')
-                        : (QChar::isPrint(linebytes.at(column))
-                               ? QChar(linebytes.at(column))
-                               : m_options.unprintablechar);
-
-                b = static_cast<int>(column) < linebytes.size()
-                        ? linebytes.at(column)
-                        : 0x00;
-            }
-            else
-                s = m_options.invalidchar;
-
-            this->drawFormat(ctx, b, s, QHexArea::Ascii, line, column,
-                             static_cast<int>(column) < linebytes.size());
-        }
-
+        this->drawHexPart(ctx, linebytes, line);
+        this->drawAsciiPart(ctx, linebytes, line);
         ctx->nextLine();
         if(m_hexdocument->isEmpty())
             break;
+    }
+}
+
+void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
+    quint64 address = line * m_options.linelength + this->baseAddress();
+    QString addrstr = QString::number(address, 16)
+                          .rightJustified(this->addressWidth(), '0')
+                          .toUpper();
+
+    // Address Part
+    QHexCharFormat acf;
+    acf.foreground = m_options.headercolor;
+
+    if(m_options.hasFlag(QHexFlags::StyledAddress))
+        acf.background = this->palette().color(QPalette::Window);
+
+    if(m_hexdelegate)
+        m_hexdelegate->renderAddress(address, acf, this);
+
+    if(m_hexcursor->line() == static_cast<qint64>(line) &&
+       m_options.hasFlag(QHexFlags::HighlightAddress)) {
+        acf.background = this->palette().color(QPalette::Highlight);
+        acf.foreground = this->palette().color(QPalette::HighlightedText);
+    }
+
+    if(m_options.hasFlag(QHexFlags::PaddedAddress)) {
+        ctx->drawText(" " + addrstr + " ", acf);
+    }
+    else {
+        ctx->advanceX();
+        ctx->drawText(addrstr, acf);
+        ctx->advanceX();
+    }
+
+    ctx->advanceX();
+    ctx->clearFormat();
+}
+
+void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
+                           quint64 line) const {
+
+    for(unsigned int col = 0u; col < m_options.linelength;) {
+        QHexCharFormat cf;
+
+        for(unsigned int byteidx = 0u; byteidx < m_options.grouplength;
+            byteidx++, col++) {
+            QString s;
+            quint8 b{};
+
+            if(m_hexdocument->accept(this->positionFromLineCol(line, col))) {
+                s = linebytes.isEmpty() ||
+                            col >= static_cast<qint64>(linebytes.size())
+                        ? "  "
+                        : QString(QHexUtils::toHex(linebytes.mid(col, 1))
+                                      .toUpper());
+                b = static_cast<int>(col) < linebytes.size() ? linebytes.at(col)
+                                                             : 0x00;
+            }
+            else
+                s = QString(m_options.invalidchar).repeated(2);
+
+            cf = this->drawFormat(ctx, b, s, QHexArea::Hex, line, col,
+                                  static_cast<int>(col) < linebytes.size());
+        }
+
+        ctx->drawText(" ", cf);
+    }
+
+    ctx->drawText(" ", {});
+}
+
+void QHexView::drawAsciiPart(PaintContext* ctx, const QByteArray& linebytes,
+                             quint64 line) const {
+    for(unsigned int col = 0u; col < m_options.linelength; col++) {
+        QString s;
+        quint8 b{};
+
+        if(m_hexdocument->accept(this->positionFromLineCol(line, col))) {
+            s = linebytes.isEmpty() ||
+                        col >= static_cast<qint64>(linebytes.size())
+                    ? QChar(' ')
+                    : (QChar::isPrint(linebytes.at(col))
+                           ? QChar(linebytes.at(col))
+                           : m_options.unprintablechar);
+
+            b = static_cast<int>(col) < linebytes.size() ? linebytes.at(col)
+                                                         : 0x00;
+        }
+        else
+            s = m_options.invalidchar;
+
+        this->drawFormat(ctx, b, s, QHexArea::Ascii, line, col,
+                         static_cast<int>(col) < linebytes.size());
     }
 }
 
@@ -1230,6 +1240,12 @@ void QHexView::movePrevious(bool select) {
         this->hexCursor()->move(
             qMin<qint64>(line, this->lines()),
             qMin<qint64>(column, this->getLastColumn(line)));
+}
+
+bool QHexView::atBottom() const {
+    const QScrollBar* vscroll = this->verticalScrollBar();
+    return vscroll && vscroll->value() &&
+           vscroll->value() == vscroll->maximum();
 }
 
 bool QHexView::keyPressMove(QKeyEvent* e) {
