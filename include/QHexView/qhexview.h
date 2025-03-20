@@ -29,7 +29,6 @@ class QHexView: public QAbstractScrollArea {
         void drawText(const QString& s, const QHexCharFormat& cf);
         void drawText(const QString& s);
         void fillLine(QColor c) const;
-        void setLine(int l);
         void clearFormat();
         void nextLine();
         void prevLine();

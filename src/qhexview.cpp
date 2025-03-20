@@ -73,11 +73,6 @@ void QHexView::PaintContext::fillLine(QColor c) const {
         c);
 }
 
-void QHexView::PaintContext::setLine(int l) {
-    x = 0;
-    y = l * this->hexview->lineHeight();
-}
-
 void QHexView::PaintContext::clearFormat() { this->format = {}; }
 
 void QHexView::PaintContext::nextLine() {
@@ -87,7 +82,7 @@ void QHexView::PaintContext::nextLine() {
 
 void QHexView::PaintContext::prevLine() {
     x = 0;
-    y = qMax(0.0, y - this->hexview->lineHeight());
+    y -= this->hexview->lineHeight();
 }
 
 void QHexView::PaintContext::advanceX() { x += this->hexview->cellWidth(); }
@@ -474,8 +469,16 @@ void QHexView::setAutoWidth(bool r) {
 
 void QHexView::paint(QPainter* p) const {
     PaintContext ctx{this, p, &m_fontmetrics};
-    this->drawHeader(&ctx);
-    this->drawDocument(&ctx);
+
+    if(this->atBottom()) {
+        this->drawDocument(&ctx);
+        this->drawHeader(&ctx);
+    }
+    else {
+        this->drawHeader(&ctx);
+        this->drawDocument(&ctx);
+    }
+
     this->drawSeparators(p);
 }
 
@@ -620,6 +623,8 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(m_options.hasFlag(QHexFlags::NoHeader))
         return;
 
+    ctx->y = 0; // Move to top
+
     QHexCharFormat hcf{};
     if(m_options.hasFlag(QHexFlags::StyledHeader))
         hcf.background = this->palette().color(QPalette::Window);
@@ -747,28 +752,37 @@ void QHexView::drawDocument(PaintContext* ctx) const {
     if(!m_hexdocument)
         return;
 
-    auto style_background = [&](qint64 line) {
+    auto do_draw_document = [&](qint64 line) {
+        // Draw background
         if(m_options.linealternatebackground.isValid() && line % 2)
             ctx->fillLine(m_options.linealternatebackground);
         else if(m_options.linebackground.isValid() && !(line % 2))
             ctx->fillLine(m_options.linebackground);
-    };
 
-    quint64 line = static_cast<quint64>(this->verticalScrollBar()->value());
-
-    for(qint64 l = 0; m_hexdocument->isEmpty() ||
-                      (line < this->lines() && l < this->visibleLines());
-        l++, line++) {
-
-        style_background(line);
+        // Draw contents
         this->drawAddressPart(ctx, line);
-
         QByteArray linebytes = this->getLine(line);
         this->drawHexPart(ctx, linebytes, line);
         this->drawAsciiPart(ctx, linebytes, line);
-        ctx->nextLine();
-        if(m_hexdocument->isEmpty())
-            break;
+    };
+
+    if(this->atBottom()) {
+        // Seek to end of viewport
+        ctx->y = this->viewport()->height() - this->lineHeight();
+        quint64 line = this->lines();
+
+        for(qint64 l = 0; line-- > 0 && l < this->visibleLines(); l++) {
+            do_draw_document(line);
+            ctx->prevLine();
+        }
+    }
+    else {
+        quint64 line = static_cast<quint64>(this->verticalScrollBar()->value());
+        for(qint64 l = 0; line < this->lines() && l < this->visibleLines();
+            l++, line++) {
+            do_draw_document(line);
+            ctx->nextLine();
+        }
     }
 }
 
