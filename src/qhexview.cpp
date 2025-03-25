@@ -625,6 +625,10 @@ void QHexView::drawHeader(PaintContext* ctx) const {
 
     ctx->y = 0; // Move to top
 
+    // Fill blank first
+    ctx->painter->fillRect(this->headerRect(),
+                           this->palette().color(QPalette::Window));
+
     QHexCharFormat hcf{};
     if(m_options.hasFlag(QHexFlags::StyledHeader))
         hcf.background = this->palette().color(QPalette::Window);
@@ -971,11 +975,11 @@ quint64 QHexView::selectionEndOffset() const {
 quint64 QHexView::baseAddress() const { return m_options.baseaddress; }
 
 quint64 QHexView::lines() const {
-    if(!m_hexdocument)
+    if(!m_hexdocument || !m_options.linelength)
         return 0;
 
-    auto lines = static_cast<quint64>(qCeil(
-        m_hexdocument->length() / static_cast<double>(m_options.linelength)));
+    lldiv_t division = std::div(m_hexdocument->length(), m_options.linelength);
+    quint64 lines = division.rem ? division.quot + 1 : division.quot;
     return !m_hexdocument->isEmpty() && !lines ? 1 : lines;
 }
 
