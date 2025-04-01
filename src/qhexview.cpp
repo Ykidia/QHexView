@@ -131,8 +131,7 @@ QHexView::QHexView(QWidget* parent)
 
 QRectF QHexView::headerRect() const {
     if(m_options.hasFlag(QHexFlags::NoHeader))
-        return {};
-
+        return QRectF{0, 0, 0, 0};
     return QRectF(0, 0, this->lineWidth(), this->lineHeight());
 }
 
@@ -1072,11 +1071,22 @@ QHexPosition QHexView::positionFromPoint(QPoint pt) const {
         default: break;
     }
 
-    pos.line = qMin<qint64>(this->verticalScrollBar()->value() +
-                                (abspt.y() / this->lineHeight()),
-                            this->lines());
-    if(!m_options.hasFlag(QHexFlags::NoHeader))
-        pos.line = qMax<qint64>(0, pos.line - 1);
+    qreal hdrheight = this->headerRect().height();
+    qreal contenty = abspt.y() - hdrheight;
+    if(contenty < 0) // Click in header area
+        return {};
+
+    if(this->atBottom()) {
+        qreal contentheight = this->viewport()->height() - hdrheight;
+        qint64 l =
+            this->lines() - ((contentheight - contenty) / this->lineHeight());
+        pos.line = qMax<qint64>(l, 0);
+    }
+    else {
+        pos.line = qMin<qint64>(this->verticalScrollBar()->value() +
+                                    (contenty / this->lineHeight()),
+                                this->lines());
+    }
 
     auto docline = this->getLine(pos.line);
     pos.column =
