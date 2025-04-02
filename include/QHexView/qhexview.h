@@ -42,6 +42,7 @@ public:
 public:
     explicit QHexView(QWidget* parent = nullptr);
     QRectF headerRect() const;
+    QRectF documentRect() const;
     QRectF addressRect() const;
     QRectF hexRect() const;
     QRectF asciiRect() const;

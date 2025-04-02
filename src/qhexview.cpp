@@ -135,6 +135,13 @@ QRectF QHexView::headerRect() const {
     return QRectF(0, 0, this->lineWidth(), this->lineHeight());
 }
 
+QRectF QHexView::documentRect() const {
+    QRectF hdr = this->headerRect();
+
+    return QRectF{0, hdr.height(), this->lineWidth(),
+                  this->viewport()->height() - hdr.height()};
+}
+
 QRectF QHexView::addressRect() const {
     qreal y = m_options.hasFlag(QHexFlags::NoHeader) ? 0 : this->lineHeight();
     return QRectF(0, y, this->endColumnX(), this->height() - y);
@@ -478,6 +485,7 @@ void QHexView::paint(QPainter* p) const {
         this->drawDocument(&ctx);
     }
 
+    p->setClipRect(QRectF{}, Qt::NoClip);
     this->drawSeparators(p);
 }
 
@@ -622,11 +630,8 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(m_options.hasFlag(QHexFlags::NoHeader))
         return;
 
+    ctx->painter->setClipRect(this->headerRect());
     ctx->y = 0; // Move to top
-
-    // Fill blank first
-    ctx->painter->fillRect(this->headerRect(),
-                           this->palette().color(QPalette::Window));
 
     QHexCharFormat hcf{};
     if(m_options.hasFlag(QHexFlags::StyledHeader))
@@ -754,6 +759,8 @@ void QHexView::drawHeader(PaintContext* ctx) const {
 void QHexView::drawDocument(PaintContext* ctx) const {
     if(!m_hexdocument)
         return;
+
+    ctx->painter->setClipRect(this->documentRect());
 
     auto do_draw_document = [&](qint64 line) {
         // Draw background
