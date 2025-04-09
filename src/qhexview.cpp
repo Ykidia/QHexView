@@ -26,6 +26,21 @@
 #define qhexview_fmtprint(fmt, ...)
 #endif
 
+namespace {
+
+void merge_formats(QHexCharFormat& dst, const QHexCharFormat& src) {
+    if(dst.background == Qt::NoBrush)
+        dst.background = src.background;
+
+    if(!dst.foreground.isValid())
+        dst.foreground = src.foreground;
+
+    if(!dst.underline.isValid())
+        dst.underline = src.underline;
+}
+
+} // namespace
+
 QHexView::PaintContext::PaintContext(const QHexView* hv, QPainter* p,
                                      const QFontMetricsF* fm)
     : hexview{hv}, painter{p}, fontmetrics{fm}, x{0}, y{0} {}
@@ -46,7 +61,7 @@ void QHexView::PaintContext::drawText(const QString& s) {
 
     QRectF r = {this->x, this->y, w, this->hexview->lineHeight()};
 
-    if(this->format.background.isValid())
+    if(this->format.background != Qt::NoBrush)
         this->painter->fillRect(r, this->format.background);
 
     this->painter->setPen(this->format.foreground);
@@ -240,46 +255,45 @@ void QHexView::setCursorMode(QHexCursor::Mode mode) {
     m_hexcursor->setMode(mode);
 }
 
-void QHexView::setByteColor(quint8 b, QHexColor c) {
+void QHexView::setByteColor(quint8 b, const QHexCharFormat& c) {
     m_options.bytecolors[b] = c;
     this->checkAndUpdate();
 }
 
-void QHexView::setByteForeground(quint8 b, QColor c) {
+void QHexView::setByteForeground(quint8 b, const QColor& c) {
     m_options.bytecolors[b].foreground = c;
     this->checkAndUpdate();
 }
 
-void QHexView::setByteBackground(quint8 b, QColor c) {
+void QHexView::setByteBackground(quint8 b, const QBrush& c) {
     m_options.bytecolors[b].background = c;
     this->checkAndUpdate();
 }
 
-void QHexView::setMetadata(qint64 begin, qint64 end, const QColor& fgcolor,
-                           const QColor& bgcolor, const QString& comment) {
-    m_hexmetadata->setMetadata(begin, end, fgcolor, bgcolor, comment);
+void QHexView::setMetadata(qint64 begin, qint64 end, const QColor& fg,
+                           const QBrush& bg, const QString& comment) {
+    m_hexmetadata->setMetadata(begin, end, fg, bg, comment);
 }
-void QHexView::setForeground(qint64 begin, qint64 end, const QColor& fgcolor) {
-    m_hexmetadata->setForeground(begin, end, fgcolor);
+void QHexView::setForeground(qint64 begin, qint64 end, const QColor& fg) {
+    m_hexmetadata->setForeground(begin, end, fg);
 }
-void QHexView::setBackground(qint64 begin, qint64 end, const QColor& bgcolor) {
-    m_hexmetadata->setBackground(begin, end, bgcolor);
+void QHexView::setBackground(qint64 begin, qint64 end, const QBrush& bg) {
+    m_hexmetadata->setBackground(begin, end, bg);
 }
 void QHexView::setComment(qint64 begin, qint64 end, const QString& comment) {
     m_hexmetadata->setComment(begin, end, comment);
 }
-void QHexView::setMetadataSize(qint64 begin, qint64 length,
-                               const QColor& fgcolor, const QColor& bgcolor,
-                               const QString& comment) {
-    m_hexmetadata->setMetadataSize(begin, length, fgcolor, bgcolor, comment);
+void QHexView::setMetadataSize(qint64 begin, qint64 length, const QColor& fg,
+                               const QBrush& bg, const QString& comment) {
+    m_hexmetadata->setMetadataSize(begin, length, fg, bg, comment);
 }
 void QHexView::setForegroundSize(qint64 begin, qint64 length,
-                                 const QColor& fgcolor) {
-    m_hexmetadata->setForegroundSize(begin, length, fgcolor);
+                                 const QColor& fg) {
+    m_hexmetadata->setForegroundSize(begin, length, fg);
 }
 void QHexView::setBackgroundSize(qint64 begin, qint64 length,
-                                 const QColor& bgcolor) {
-    m_hexmetadata->setBackgroundSize(begin, length, bgcolor);
+                                 const QBrush& bg) {
+    m_hexmetadata->setBackgroundSize(begin, length, bg);
 }
 void QHexView::setCommentSize(qint64 begin, qint64 length,
                               const QString& comment) {
@@ -503,9 +517,15 @@ void QHexView::checkOptions() {
     if(m_options.grouplength <= 1)
         m_options.grouplength = 1;
 
-    if(!m_options.headercolor.isValid())
-        m_options.headercolor =
+    if(!m_options.headerformat.foreground.isValid()) {
+        m_options.headerformat.foreground =
             this->palette().color(QPalette::Normal, QPalette::Highlight);
+    }
+
+    if(m_options.headerformat.background == Qt::NoBrush) {
+        m_options.headerformat.background =
+            this->palette().brush(QPalette::Base);
+    }
 }
 
 void QHexView::setLineLength(unsigned int l) {
@@ -633,20 +653,11 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     ctx->painter->setClipRect(this->headerRect());
     ctx->y = 0; // Move to top
 
-    QHexCharFormat hcf{};
+    QHexCharFormat hcf = m_options.headerformat;
     if(m_options.hasFlag(QHexFlags::StyledHeader))
-        hcf.background = this->palette().color(QPalette::Window);
-    if(m_hexdelegate)
-        m_hexdelegate->renderHeader(hcf, this);
+        hcf.background = this->palette().brush(QPalette::Window);
 
-    const auto RESET_FORMAT = [&](const QHexOptions& options,
-                                  QHexCharFormat& cf) {
-        cf = {};
-        cf.foreground =
-            hcf.foreground.isValid() ? hcf.foreground : options.headercolor;
-    };
-
-    if(hcf.background.isValid()) // Draw background directly
+    if(hcf.background != Qt::NoBrush) // Draw background directly
         ctx->painter->fillRect(this->headerRect(), hcf.background);
 
     QString addresslabel;
@@ -655,18 +666,16 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(addresslabel.isEmpty() && !m_options.addresslabel.isEmpty())
         addresslabel = m_options.addresslabel;
 
-    QHexCharFormat cf{};
-    RESET_FORMAT(m_options, cf);
-    if(m_hexdelegate)
-        m_hexdelegate->renderHeaderPart(addresslabel, QHexArea::Address, cf,
-                                        this);
-    ctx->advanceX();
+    QHexCharFormat cf = m_options.addressheaderformat;
+    merge_formats(cf, hcf);
+
+    ctx->drawText(" ", cf);
     ctx->drawText(QHexView::reduced(addresslabel, this->addressWidth()), cf);
-    ctx->advanceX();
+    ctx->drawText(" ", cf);
     ctx->clearFormat();
 
-    if(m_hexdelegate)
-        RESET_FORMAT(m_options, cf);
+    cf = m_options.hexheaderformat;
+    merge_formats(cf, hcf);
 
     QString hexlabel;
     if(m_hexdelegate)
@@ -675,42 +684,33 @@ void QHexView::drawHeader(PaintContext* ctx) const {
         hexlabel = m_options.hexlabel;
 
     if(hexlabel.isNull()) {
-        ctx->drawText(" ", hcf);
+        ctx->drawText(" ", cf);
 
         for(auto i = 0u; i < m_options.linelength; i += m_options.grouplength) {
             QString h = QString::number(i, 16)
                             .rightJustified(m_options.grouplength * 2, '0')
                             .toUpper();
 
-            if(m_hexdelegate) {
-                RESET_FORMAT(m_options, cf);
-                m_hexdelegate->renderHeaderPart(h, QHexArea::Hex, cf, this);
-            }
-
+            QHexCharFormat icf = cf;
             if(m_hexcursor->column() == static_cast<qint64>(i) &&
                m_options.hasFlag(QHexFlags::HighlightColumn)) {
-                cf.background = this->palette().color(QPalette::Highlight);
-                cf.foreground =
+                icf.background = this->palette().brush(QPalette::Highlight);
+                icf.foreground =
                     this->palette().color(QPalette::HighlightedText);
             }
 
-            ctx->drawText(h, cf);
-            ctx->drawText(" ", hcf);
-            RESET_FORMAT(m_options, cf);
+            ctx->drawText(h, icf);
+            ctx->drawText(" ", cf);
         }
     }
     else {
-        if(m_hexdelegate)
-            m_hexdelegate->renderHeaderPart(hexlabel, QHexArea::Hex, cf, this);
+        ctx->drawText(" ", cf);
         ctx->drawText(
-            " " +
-            QHexView::reduced(
-                hexlabel, (this->hexColumnWidth() / this->cellWidth()) - 1) +
-            " ");
+            QHexView::reduced(hexlabel,
+                              (this->hexColumnWidth() / this->cellWidth()) - 1),
+            cf);
+        ctx->drawText(" ", cf);
     }
-
-    if(m_hexdelegate)
-        RESET_FORMAT(m_options, cf);
 
     QString asciilabel;
     if(m_hexdelegate)
@@ -718,39 +718,37 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(asciilabel.isEmpty())
         asciilabel = m_options.asciilabel;
 
+    cf = m_options.asciiheaderformat;
+    merge_formats(cf, hcf);
+
     if(asciilabel.isNull()) {
-        ctx->drawText(" ", hcf);
+        ctx->drawText(" ", cf);
 
         for(unsigned int i = 0; i < m_options.linelength; i++) {
             QString a = QString::number(i, 16).toUpper();
-
-            if(m_hexdelegate) {
-                RESET_FORMAT(m_options, cf);
-                m_hexdelegate->renderHeaderPart(a, QHexArea::Ascii, cf, this);
-            }
+            QHexCharFormat icf = cf;
 
             if(m_hexcursor->column() == static_cast<qint64>(i) &&
                m_options.hasFlag(QHexFlags::HighlightColumn)) {
-                cf.background = this->palette().color(QPalette::Highlight);
-                cf.foreground =
+                icf.background = this->palette().brush(QPalette::Highlight);
+                icf.foreground =
                     this->palette().color(QPalette::HighlightedText);
             }
 
-            ctx->drawText(a, cf);
-            RESET_FORMAT(m_options, cf);
+            ctx->drawText(a, icf);
         }
+
+        ctx->drawText(" ", cf);
     }
     else {
-        if(m_hexdelegate)
-            m_hexdelegate->renderHeaderPart(asciilabel, QHexArea::Ascii, cf,
-                                            this);
-        ctx->drawText(" " +
-                      QHexView::reduced(asciilabel, ((this->endColumnX() -
+        ctx->drawText(" ", cf);
+        ctx->drawText(QHexView::reduced(asciilabel, ((this->endColumnX() -
                                                       this->asciiColumnX() -
                                                       this->cellWidth()) /
                                                      this->cellWidth()) -
-                                                        1) +
-                      " ");
+                                                        1),
+                      cf);
+        ctx->drawText(" ", cf);
     }
 
     ctx->nextLine();
@@ -803,18 +801,17 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
                           .toUpper();
 
     // Address Part
-    QHexCharFormat acf;
-    acf.foreground = m_options.headercolor;
+    QHexCharFormat acf = m_options.headerformat;
 
     if(m_options.hasFlag(QHexFlags::StyledAddress))
-        acf.background = this->palette().color(QPalette::Window);
+        acf.background = this->palette().brush(QPalette::Window);
 
     if(m_hexdelegate)
         m_hexdelegate->renderAddress(address, acf, this);
 
     if(m_hexcursor->line() == static_cast<qint64>(line) &&
        m_options.hasFlag(QHexFlags::HighlightAddress)) {
-        acf.background = this->palette().color(QPalette::Highlight);
+        acf.background = this->palette().brush(QPalette::Highlight);
         acf.foreground = this->palette().color(QPalette::HighlightedText);
     }
 
@@ -833,7 +830,6 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
 
 void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
                            quint64 line) const {
-
     for(unsigned int col = 0u; col < m_options.linelength;) {
         QHexCharFormat cf;
 
@@ -1127,44 +1123,42 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
                                     const QString& s, QHexArea area,
                                     qint64 line, qint64 column,
                                     bool applyformat) const {
-    QHexCharFormat cf, selcf;
+    QHexCharFormat cf{}, selcf{};
     QHexPosition pos{line, column};
 
     if(applyformat) {
         auto offset = m_hexcursor->positionToOffset(pos);
         bool hasdelegate =
-            m_hexdelegate && m_hexdelegate->render(offset, b, cf, this);
+            m_hexdelegate && m_hexdelegate->renderByte(offset, b, cf, this);
 
         if(!hasdelegate) {
             auto it = m_options.bytecolors.find(b);
-
-            if(it != m_options.bytecolors.end()) {
-                if(it->background.isValid())
-                    cf.background = it->background;
-                if(it->foreground.isValid())
-                    cf.foreground = it->foreground;
-            }
+            if(it != m_options.bytecolors.end())
+                cf = *it;
         }
 
-        const auto* metadataline = m_hexmetadata->find(line);
+        const QHexMetadataLine* metadataline = m_hexmetadata->find(line);
 
         if(metadataline) {
-            for(const auto& metadata : *metadataline) {
+            for(const QHexMetadataItem& metadata : *metadataline) {
                 if(offset < metadata.begin || offset >= metadata.end)
                     continue;
 
                 if(!hasdelegate) {
-                    if(metadata.foreground.isValid())
-                        cf.foreground = metadata.foreground;
+                    if(metadata.format.foreground.isValid())
+                        cf.foreground = metadata.format.foreground;
 
-                    if(metadata.background.isValid()) {
-                        cf.background = metadata.background;
+                    if(metadata.format.background != Qt::NoBrush) {
+                        cf.background = metadata.format.background;
 
-                        if(!metadata.foreground.isValid()) {
-                            cf.foreground =
-                                this->getReadableColor(metadata.background);
+                        if(!metadata.format.foreground.isValid()) {
+                            cf.foreground = this->getReadableColor(
+                                metadata.format.background.color());
                         }
                     }
+
+                    if(metadata.format.underline.isValid())
+                        cf.underline = metadata.format.underline;
                 }
 
                 if(!metadata.comment.isEmpty()) {
@@ -1178,9 +1172,9 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
                 if(offset == metadata.begin) {
                     if(metadata.comment.isEmpty())
                         selcf.underline = {};
-                    if(!metadata.foreground.isValid())
+                    if(!metadata.format.foreground.isValid())
                         selcf.foreground = Qt::color1;
-                    if(!metadata.background.isValid())
+                    if(metadata.format.background == Qt::NoBrush)
                         selcf.background = Qt::transparent;
                 }
 
@@ -1199,7 +1193,7 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
         auto selend = this->hexCursor()->selectionEndOffset();
 
         cf.background =
-            this->palette().color(QPalette::Normal, QPalette::Highlight);
+            this->palette().brush(QPalette::Normal, QPalette::Highlight);
         cf.foreground =
             this->palette().color(QPalette::Normal, QPalette::HighlightedText);
         if(offset < selend && column < this->getLastColumn(line))
@@ -1207,20 +1201,21 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
     }
 
     if(this->hexCursor()->position() == pos) {
-        QColor cursorbg = this->palette().color(
+        QBrush cursorbg = this->palette().brush(
             this->hasFocus() ? QPalette::Normal : QPalette::Disabled,
             QPalette::WindowText);
         QColor cursorfg = this->palette().color(
             this->hasFocus() ? QPalette::Normal : QPalette::Disabled,
             QPalette::Base);
-        QColor discursorbg =
-            this->palette().color(QPalette::Disabled, QPalette::WindowText);
+        QBrush discursorbg =
+            this->palette().brush(QPalette::Disabled, QPalette::WindowText);
         QColor discursorfg =
             this->palette().color(QPalette::Disabled, QPalette::Base);
 
         switch(m_hexcursor->mode()) {
             case QHexCursor::Mode::Insert:
-                cf.underline = m_currentarea == area ? cursorbg : discursorbg;
+                cf.underline =
+                    (m_currentarea == area ? cursorbg : discursorbg).color();
                 break;
 
             case QHexCursor::Mode::Overwrite:

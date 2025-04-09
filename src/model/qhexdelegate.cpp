@@ -26,23 +26,8 @@ void QHexDelegate::renderAddress(quint64 address, QHexCharFormat& cf,
     Q_UNUSED(hexview);
 }
 
-void QHexDelegate::renderHeader(QHexCharFormat& cf,
-                                const QHexView* hexview) const {
-    Q_UNUSED(cf);
-    Q_UNUSED(hexview);
-}
-
-void QHexDelegate::renderHeaderPart(const QString& s, QHexArea area,
-                                    QHexCharFormat& cf,
-                                    const QHexView* hexview) const {
-    Q_UNUSED(s);
-    Q_UNUSED(area);
-    Q_UNUSED(cf);
-    Q_UNUSED(hexview);
-}
-
-bool QHexDelegate::render(quint64 offset, quint8 b, QHexCharFormat& outcf,
-                          const QHexView* hexview) const {
+bool QHexDelegate::renderByte(quint64 offset, quint8 b, QHexCharFormat& outcf,
+                              const QHexView* hexview) const {
     Q_UNUSED(offset);
     Q_UNUSED(b);
     Q_UNUSED(outcf);

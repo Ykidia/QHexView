@@ -37,11 +37,11 @@ void QHexMetadata::removeMetadata(qint64 line) {
 
 void QHexMetadata::removeBackground(qint64 line) {
     this->clearMetadata(line, [](QHexMetadataItem& mi) -> bool {
-        if(!mi.background.isValid())
+        if(mi.format.background == Qt::NoBrush)
             return false;
 
-        if(mi.foreground.isValid() || !mi.comment.isEmpty()) {
-            mi.background = QColor();
+        if(mi.format.foreground.isValid() || !mi.comment.isEmpty()) {
+            mi.format.background = QBrush{};
             return false;
         }
 
@@ -51,11 +51,11 @@ void QHexMetadata::removeBackground(qint64 line) {
 
 void QHexMetadata::removeForeground(qint64 line) {
     this->clearMetadata(line, [](QHexMetadataItem& mi) -> bool {
-        if(!mi.foreground.isValid())
+        if(!mi.format.foreground.isValid())
             return false;
 
-        if(mi.background.isValid() || !mi.comment.isEmpty()) {
-            mi.foreground = QColor();
+        if(mi.format.background != Qt::NoBrush || !mi.comment.isEmpty()) {
+            mi.format.foreground = QColor{};
             return false;
         }
 
@@ -68,7 +68,8 @@ void QHexMetadata::removeComments(qint64 line) {
         if(mi.comment.isEmpty())
             return false;
 
-        if(mi.foreground.isValid() || mi.background.isValid()) {
+        if(mi.format.foreground.isValid() ||
+           mi.format.background != Qt::NoBrush) {
             mi.comment.clear();
             return false;
         }
@@ -79,12 +80,13 @@ void QHexMetadata::removeComments(qint64 line) {
 
 void QHexMetadata::unhighlight(qint64 line) {
     this->clearMetadata(line, [](QHexMetadataItem& mi) -> bool {
-        if(!mi.foreground.isValid() && !mi.background.isValid())
+        if(!mi.format.foreground.isValid() &&
+           mi.format.background == Qt::NoBrush)
             return false;
 
         if(!mi.comment.isEmpty()) {
-            mi.foreground = QColor();
-            mi.background = QColor();
+            mi.format.foreground = {};
+            mi.format.background = {};
             return false;
         }
 

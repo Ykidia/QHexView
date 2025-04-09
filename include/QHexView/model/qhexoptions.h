@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QBrush>
 #include <QChar>
 #include <QColor>
 #include <QHash>
@@ -23,9 +24,10 @@ enum : unsigned int {
 
 }
 
-struct QHexColor {
+struct QHexCharFormat {
+    QBrush background;
     QColor foreground;
-    QColor background;
+    QColor underline;
 };
 
 struct QHexOptions {
@@ -43,10 +45,13 @@ struct QHexOptions {
     int scrollsteps{1};
 
     // Colors & Styles
-    QHash<quint8, QHexColor> bytecolors;
+    QHash<quint8, QHexCharFormat> bytecolors;
     QColor linealternatebackground;
     QColor linebackground;
-    QColor headercolor;
+    QHexCharFormat headerformat;
+    QHexCharFormat addressheaderformat;
+    QHexCharFormat hexheaderformat;
+    QHexCharFormat asciiheaderformat;
     QColor commentcolor;
     QColor separatorcolor;
 
