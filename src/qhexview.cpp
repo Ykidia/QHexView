@@ -654,8 +654,18 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     ctx->y = 0; // Move to top
 
     QHexCharFormat hcf = m_options.headerformat;
+
+    // NOTE: QBrush::gradient() const-casting is also done
+    // inside Qt codebase (see qplaintextedit.cpp)
+    auto* g = const_cast<QGradient*>(hcf.background.gradient());
+
     if(m_options.hasFlag(QHexFlags::StyledHeader))
         hcf.background = this->palette().brush(QPalette::Window);
+    else if(g && g->type() == QGradient::LinearGradient) {
+        auto* lg = static_cast<QLinearGradient*>(g);
+        lg->setStart(0, 0);
+        lg->setFinalStop(0, this->headerRect().height());
+    }
 
     if(hcf.background != Qt::NoBrush) // Draw background directly
         ctx->painter->fillRect(this->headerRect(), hcf.background);
@@ -801,7 +811,7 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
                           .toUpper();
 
     // Address Part
-    QHexCharFormat acf = m_options.headerformat;
+    QHexCharFormat acf = m_options.addressheaderformat;
 
     if(m_options.hasFlag(QHexFlags::StyledAddress))
         acf.background = this->palette().brush(QPalette::Window);
