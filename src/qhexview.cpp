@@ -517,13 +517,13 @@ void QHexView::checkOptions() {
     if(m_options.grouplength <= 1)
         m_options.grouplength = 1;
 
-    if(!m_options.headerformat.foreground.isValid()) {
-        m_options.headerformat.foreground =
+    if(!m_options.header_format.foreground.isValid()) {
+        m_options.header_format.foreground =
             this->palette().color(QPalette::Normal, QPalette::Highlight);
     }
 
-    if(m_options.headerformat.background == Qt::NoBrush) {
-        m_options.headerformat.background =
+    if(m_options.header_format.background == Qt::NoBrush) {
+        m_options.header_format.background =
             this->palette().brush(QPalette::Base);
     }
 }
@@ -617,8 +617,8 @@ void QHexView::drawSeparators(QPainter* p) const {
         return;
 
     auto oldpen = p->pen();
-    p->setPen(m_options.separatorcolor.isValid()
-                  ? m_options.separatorcolor
+    p->setPen(m_options.separator_color.isValid()
+                  ? m_options.separator_color
                   : this->palette().color(QPalette::Dark));
 
     if(!m_options.hasFlag(QHexFlags::NoHeader) &&
@@ -653,7 +653,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     ctx->painter->setClipRect(this->headerRect());
     ctx->y = 0; // Move to top
 
-    QHexCharFormat hcf = m_options.headerformat;
+    QHexCharFormat hcf = m_options.header_format;
 
     // NOTE: QBrush::gradient() const-casting is also done
     // inside Qt codebase (see qplaintextedit.cpp)
@@ -676,7 +676,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(addresslabel.isEmpty() && !m_options.addresslabel.isEmpty())
         addresslabel = m_options.addresslabel;
 
-    QHexCharFormat cf = m_options.addressheaderformat;
+    QHexCharFormat cf = m_options.addressheader_format;
     merge_formats(cf, hcf);
 
     ctx->drawText(" ", cf);
@@ -684,7 +684,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     ctx->drawText(" ", cf);
     ctx->clearFormat();
 
-    cf = m_options.hexheaderformat;
+    cf = m_options.hexheader_format;
     merge_formats(cf, hcf);
 
     QString hexlabel;
@@ -728,7 +728,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(asciilabel.isEmpty())
         asciilabel = m_options.asciilabel;
 
-    cf = m_options.asciiheaderformat;
+    cf = m_options.asciiheader_format;
     merge_formats(cf, hcf);
 
     if(asciilabel.isNull()) {
@@ -772,10 +772,10 @@ void QHexView::drawDocument(PaintContext* ctx) const {
 
     auto do_draw_document = [&](qint64 line) {
         // Draw background
-        if(m_options.linealternatebackground.isValid() && line % 2)
-            ctx->fillLine(m_options.linealternatebackground);
-        else if(m_options.linebackground.isValid() && !(line % 2))
-            ctx->fillLine(m_options.linebackground);
+        if(m_options.linealt_background.isValid() && line % 2)
+            ctx->fillLine(m_options.linealt_background);
+        else if(m_options.line_background.isValid() && !(line % 2))
+            ctx->fillLine(m_options.line_background);
 
         // Draw contents
         this->drawAddressPart(ctx, line);
@@ -811,7 +811,7 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
                           .toUpper();
 
     // Address Part
-    QHexCharFormat acf = m_options.addressheaderformat;
+    QHexCharFormat acf = m_options.addressheader_format;
 
     if(m_options.hasFlag(QHexFlags::StyledAddress))
         acf.background = this->palette().brush(QPalette::Window);
@@ -1173,8 +1173,8 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
 
                 if(!metadata.comment.isEmpty()) {
                     cf.underline =
-                        m_options.commentcolor.isValid()
-                            ? m_options.commentcolor
+                        m_options.comment_color.isValid()
+                            ? m_options.comment_color
                             : this->palette().color(QPalette::WindowText);
                 }
 

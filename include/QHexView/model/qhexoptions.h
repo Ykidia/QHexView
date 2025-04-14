@@ -46,14 +46,14 @@ struct QHexOptions {
 
     // Colors & Styles
     QHash<quint8, QHexCharFormat> bytecolors;
-    QColor linealternatebackground;
-    QColor linebackground;
-    QHexCharFormat headerformat;
-    QHexCharFormat addressheaderformat;
-    QHexCharFormat hexheaderformat;
-    QHexCharFormat asciiheaderformat;
-    QColor commentcolor;
-    QColor separatorcolor;
+    QColor linealt_background;
+    QColor line_background;
+    QHexCharFormat header_format;
+    QHexCharFormat addressheader_format;
+    QHexCharFormat hexheader_format;
+    QHexCharFormat asciiheader_format;
+    QColor comment_color;
+    QColor separator_color;
 
     // Misc
     bool copybreak{true};
