@@ -521,11 +521,6 @@ void QHexView::checkOptions() {
         m_options.header_format.foreground =
             this->palette().color(QPalette::Normal, QPalette::Highlight);
     }
-
-    if(m_options.header_format.background == Qt::NoBrush) {
-        m_options.header_format.background =
-            this->palette().brush(QPalette::Base);
-    }
 }
 
 void QHexView::setLineLength(unsigned int l) {
