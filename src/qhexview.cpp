@@ -806,7 +806,7 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
                           .toUpper();
 
     // Address Part
-    QHexCharFormat acf = m_options.addressheader_format;
+    QHexCharFormat acf = m_options.address_format;
 
     if(m_options.hasFlag(QHexFlags::StyledAddress))
         acf.background = this->palette().brush(QPalette::Window);

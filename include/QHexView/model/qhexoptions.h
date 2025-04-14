@@ -49,6 +49,7 @@ struct QHexOptions {
     QColor linealt_background;
     QColor line_background;
     QHexCharFormat header_format;
+    QHexCharFormat address_format;
     QHexCharFormat addressheader_format;
     QHexCharFormat hexheader_format;
     QHexCharFormat asciiheader_format;
