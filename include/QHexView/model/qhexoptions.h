@@ -56,8 +56,5 @@ struct QHexOptions {
     QColor comment_color;
     QColor separator_color;
 
-    // Misc
-    bool copybreak{true};
-
     inline bool hasFlag(unsigned int flag) const { return flags & flag; }
 };
