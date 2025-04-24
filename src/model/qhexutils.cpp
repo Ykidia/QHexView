@@ -299,6 +299,13 @@ QByteArray variantToByteArray(QVariant value, QHexFindMode mode,
 
 } // namespace
 
+QByteArray toHex(quint8 b) {
+    QByteArray hex(2, Qt::Uninitialized);
+    hex[0] = HEXMAP->at((b & 0xf0) >> 4);
+    hex[1] = HEXMAP->at(b & 0x0f);
+    return hex;
+}
+
 QByteArray toHex(const QByteArray& ba, char sep) {
     if(ba.isEmpty()) {
         return QByteArray();
@@ -318,9 +325,11 @@ QByteArray toHex(const QByteArray& ba, char sep) {
 }
 
 QByteArray toHex(const QByteArray& ba) { return QHexUtils::toHex(ba, '\0'); }
+
 qint64 positionToOffset(const QHexOptions* options, QHexPosition pos) {
     return options->linelength * pos.line + pos.column;
 }
+
 QHexPosition offsetToPosition(const QHexOptions* options, qint64 offset) {
     return {offset / options->linelength, offset % options->linelength};
 }

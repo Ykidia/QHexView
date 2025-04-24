@@ -14,6 +14,15 @@
 class HexFindDialog;
 #endif
 
+struct QHexCopyFormat {
+    QString prefix;
+    QString suffix;
+    QString byte_prefix;
+    QString byte_suffix;
+    QString separator;
+    bool linebreak{false};
+};
+
 class QHexView: public QAbstractScrollArea {
     Q_OBJECT
 
@@ -36,10 +45,6 @@ class QHexView: public QAbstractScrollArea {
     };
 
 public:
-    enum class CopyMode { Visual, HexArraySquare, HexArrayCurly, HexArrayChar };
-    Q_ENUM(CopyMode);
-
-public:
     explicit QHexView(QWidget* parent = nullptr);
     QRectF headerRect() const;
     QRectF documentRect() const;
@@ -52,6 +57,7 @@ public:
     QHexOptions options() const;
     QColor getReadableColor(QColor c) const;
     QByteArray selectedBytes() const;
+    QByteArray visibleBytes() const;
     QByteArray getLine(qint64 line) const;
     unsigned int addressWidth() const;
     unsigned int lineLength() const;
@@ -112,7 +118,8 @@ public Q_SLOTS:
     void undo();
     void redo();
     void cut(bool hex = false);
-    void copyAs(CopyMode mode = CopyMode::Visual) const;
+    void copyVisual() const;
+    void copyFormat(const QHexCopyFormat& cf) const;
     void copy(bool hex = false) const;
     void paste(bool hex = false);
     void clearModified();

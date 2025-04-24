@@ -348,78 +348,95 @@ void QHexView::cut(bool hex) {
         m_hexdocument->remove(m_hexcursor->offset(), 1);
 }
 
-void QHexView::copyAs(CopyMode mode) const {
-    QClipboard* c = qApp->clipboard();
+void QHexView::copyVisual() const {
+    auto line = static_cast<quint64>(this->verticalScrollBar()->value());
+    QByteArray bytes = m_hexcursor->hasSelection() ? this->selectedBytes()
+                                                   : this->visibleBytes();
 
+    auto nbytes = static_cast<qint64>(bytes.size());
+    QString s;
+
+    for(qint64 i = 0, l = 0; line < this->lines() && l < this->visibleLines();
+        l++, line++) {
+        quint64 address = line * m_options.linelength + this->baseAddress();
+        QString addrstr = QString::number(address, 16)
+                              .rightJustified(this->addressWidth(), '0')
+                              .toUpper();
+
+        s += addrstr;
+
+        for(unsigned int col = 0u; col < m_options.linelength;) {
+            s += " ";
+
+            for(unsigned int byteidx = 0u; byteidx < m_options.grouplength;
+                byteidx++, col++) {
+                qint64 pos = this->positionFromLineCol(line, col);
+
+                if(m_hexdocument->accept(pos)) {
+                    s += (i + col) >= nbytes
+                             ? "  "
+                             : QString{
+                                   QHexUtils::toHex(bytes[i + col]).toUpper()};
+                }
+                else
+                    s += QString(m_options.invalidchar).repeated(2);
+            }
+        }
+
+        s += " ";
+
+        for(unsigned int col = 0u; col < m_options.linelength; col++) {
+            qint64 pos = this->positionFromLineCol(line, col);
+
+            if(m_hexdocument->accept(pos)) {
+                s += (i + col) >= nbytes ? QChar{' '}
+                                         : (QChar::isPrint(bytes[i + col])
+                                                ? QChar{bytes[i + col]}
+                                                : m_options.unprintablechar);
+            }
+            else
+                s += m_options.invalidchar;
+        }
+
+        i += m_options.linelength;
+        s += "\n";
+
+        if(i >= bytes.size())
+            break;
+    }
+
+    qApp->clipboard()->setText(s);
+}
+
+void QHexView::copyFormat(const QHexCopyFormat& cf) const {
     QByteArray bytes = m_hexcursor->hasSelection()
-                           ? m_hexcursor->selectedBytes()
+                           ? this->selectedBytes()
                            : m_hexdocument->read(m_hexcursor->offset(), 1);
 
-    switch(mode) {
-        case CopyMode::HexArrayCurly:
-        case CopyMode::HexArraySquare: {
-            QString hexchar;
-            int i = 0;
+    QString s;
+    s += cf.prefix;
 
-            for(char b : bytes) {
-                if(!hexchar.isEmpty()) {
-                    hexchar += ", ";
-                    if(m_options.copybreak && !(++i % m_options.linelength))
-                        hexchar += "\n";
-                }
-
-                hexchar +=
-                    "0x" + QString::number(static_cast<uint>(b), 16).toUpper();
-            }
-
-            c->setText(
-                QString(mode == CopyMode::HexArraySquare ? "[%1]" : "{%1}")
-                    .arg(hexchar));
-            break;
+    for(int i = 0; i < bytes.size(); i++) {
+        if(i) {
+            s += cf.separator;
+            if(cf.linebreak && !(i % m_options.linelength))
+                s += "\n";
         }
 
-        case CopyMode::HexArrayChar: {
-            QString hexchar;
-
-            for(char b : bytes)
-                hexchar +=
-                    "\\x" + QString::number(static_cast<uint>(b), 16).toUpper();
-
-            c->setText(QString("\"%1\"").arg(hexchar));
-            break;
-        }
-
-        default: {
-            QString hexchar;
-
-            for(int i = 0; i < bytes.size(); i++) {
-                if(!(i % m_options.grouplength)) {
-                    if(!hexchar.isEmpty()) {
-                        hexchar += ", ";
-                        if(m_options.copybreak && !(i % m_options.linelength))
-                            hexchar += "\n";
-                    }
-
-                    hexchar += "0x";
-                }
-
-                hexchar += QString("%1")
-                               .arg(static_cast<uint>(bytes[i]), 2, 16,
-                                    QLatin1Char('0'))
-                               .toUpper();
-            }
-
-            c->setText(hexchar);
-            break;
-        }
+        s += cf.byte_prefix;
+        s += QHexUtils::toHex(bytes[i]).toUpper();
+        s += cf.byte_suffix;
     }
+
+    s += cf.suffix;
+    qApp->clipboard()->setText(s);
 }
 
 void QHexView::copy(bool hex) const {
     QClipboard* c = qApp->clipboard();
 
     QByteArray bytes = m_hexcursor->hasSelection()
-                           ? m_hexcursor->selectedBytes()
+                           ? this->selectedBytes()
                            : m_hexdocument->read(m_hexcursor->offset(), 1);
 
     if(hex)
@@ -842,8 +859,9 @@ void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
             byteidx++, col++) {
             QString s;
             quint8 b{};
+            qint64 pos = this->positionFromLineCol(line, col);
 
-            if(m_hexdocument->accept(this->positionFromLineCol(line, col))) {
+            if(m_hexdocument->accept(pos)) {
                 s = linebytes.isEmpty() ||
                             col >= static_cast<qint64>(linebytes.size())
                         ? "  "
@@ -874,9 +892,9 @@ void QHexView::drawAsciiPart(PaintContext* ctx, const QByteArray& linebytes,
         if(m_hexdocument->accept(this->positionFromLineCol(line, col))) {
             s = linebytes.isEmpty() ||
                         col >= static_cast<qint64>(linebytes.size())
-                    ? QChar(' ')
+                    ? QChar{' '}
                     : (QChar::isPrint(linebytes.at(col))
-                           ? QChar(linebytes.at(col))
+                           ? QChar{linebytes.at(col)}
                            : m_options.unprintablechar);
 
             b = static_cast<int>(col) < linebytes.size() ? linebytes.at(col)
@@ -1688,6 +1706,16 @@ QByteArray QHexView::selectedBytes() const {
                                      m_hexcursor->selectionLength())
                : QByteArray{};
 }
+
+QByteArray QHexView::visibleBytes() const {
+    auto line = static_cast<quint64>(this->verticalScrollBar()->value());
+    int nbytes = m_options.linelength * this->visibleLines();
+
+    return m_hexdocument
+               ? m_hexdocument->read(line * m_options.linelength, nbytes)
+               : QByteArray{};
+}
+
 QByteArray QHexView::getLine(qint64 line) const {
     return m_hexdocument ? m_hexdocument->read(line * m_options.linelength,
                                                m_options.linelength)
