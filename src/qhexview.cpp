@@ -373,10 +373,13 @@ void QHexView::copyVisual() const {
                 qint64 pos = this->positionFromLineCol(line, col);
 
                 if(m_hexdocument->accept(pos)) {
-                    s += (i + col) >= nbytes
-                             ? "  "
-                             : QString{
-                                   QHexUtils::toHex(bytes[i + col]).toUpper()};
+                    s +=
+                        (i + col) >= nbytes
+                            ? "  "
+                            : QString{
+                                  QHexUtils::toHex(
+                                      bytes[static_cast<unsigned int>(i + col)])
+                                      .toUpper()};
                 }
                 else
                     s += QString(m_options.invalidchar).repeated(2);
@@ -413,20 +416,34 @@ void QHexView::copyFormat(const QHexCopyFormat& cf) const {
                            ? this->selectedBytes()
                            : m_hexdocument->read(m_hexcursor->offset(), 1);
 
+    bool islong = cf.linebreak && (bytes.length() > m_options.linelength);
+    const QString PREFIX = cf.prefix.isEmpty()
+                               ? QString{}
+                               : QString{" "}.repeated(cf.prefix.size() + 1);
+
     QString s;
     s += cf.prefix;
+
+    if(islong)
+        s += "\n" + PREFIX;
 
     for(int i = 0; i < bytes.size(); i++) {
         if(i) {
             s += cf.separator;
-            if(cf.linebreak && !(i % m_options.linelength))
+            if(cf.linebreak && !(i % m_options.linelength)) {
                 s += "\n";
+                if(islong)
+                    s += PREFIX;
+            }
         }
 
         s += cf.byte_prefix;
         s += QHexUtils::toHex(bytes[i]).toUpper();
         s += cf.byte_suffix;
     }
+
+    if(islong)
+        s += "\n";
 
     s += cf.suffix;
     qApp->clipboard()->setText(s);
