@@ -116,9 +116,6 @@ QHexView::QHexView(QWidget* parent)
     this->setFocusPolicy(Qt::StrongFocus);
     this->viewport()->setCursor(Qt::IBeamCursor);
 
-    QPalette p = this->palette();
-    p.setBrush(QPalette::Window, p.base());
-
     connect(this->verticalScrollBar(), &QScrollBar::valueChanged, this,
             [=](int) { this->viewport()->update(); });
 
