@@ -392,10 +392,11 @@ void QHexView::copyVisual() const {
             qint64 pos = this->positionFromLineCol(line, col);
 
             if(m_hexdocument->accept(pos)) {
-                s += (i + col) >= nbytes ? QChar{' '}
-                                         : (QChar::isPrint(bytes[i + col])
-                                                ? QChar{bytes[i + col]}
-                                                : m_options.unprintablechar);
+                s += (i + col) >= nbytes
+                         ? QChar{' '}
+                         : (QChar::isPrint(bytes[static_cast<int>(i + col)])
+                                ? QChar{bytes[static_cast<int>(i + col)]}
+                                : m_options.unprintablechar);
             }
             else
                 s += m_options.invalidchar;
