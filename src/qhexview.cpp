@@ -47,8 +47,14 @@ QHexView::PaintContext::PaintContext(const QHexView* hv, QPainter* p,
 
 void QHexView::PaintContext::drawText(const QString& s,
                                       const QHexCharFormat& cf) {
-
     this->format = cf;
+
+    // Always apply a valid foreground color
+    if(!this->format.foreground.isValid()) {
+        this->format.foreground =
+            this->hexview->palette().color(QPalette::WindowText);
+    }
+
     this->drawText(s);
 }
 
