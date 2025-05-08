@@ -39,8 +39,8 @@ namespace PatternUtils {
 Q_GLOBAL_STATIC_WITH_ARGS(QString, WILDCARD_BYTE, ("??"))
 
 bool check(QString& p, qint64& len) {
-    static QHash<QString, QPair<QString, size_t>>
-        processed; // Cache processed patterns
+    // Cache processed patterns
+    static QHash<QString, QPair<QString, size_t>> processed;
 
     auto it = processed.find(p);
 

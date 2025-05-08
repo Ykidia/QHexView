@@ -42,15 +42,15 @@ public:
     }
 
     void setForeground(qint64 begin, qint64 end, const QColor& fg) {
-        this->setMetadata(begin, end, fg, QColor(), QString{});
+        this->setMetadata(begin, end, fg, Qt::NoBrush, QString{});
     }
 
     void setBackground(qint64 begin, qint64 end, const QBrush& bg) {
-        this->setMetadata(begin, end, QColor(), bg, QString{});
+        this->setMetadata(begin, end, QColor{}, bg, QString{});
     }
 
     void setComment(qint64 begin, qint64 end, const QString& comment) {
-        this->setMetadata(begin, end, QColor(), QColor(), comment);
+        this->setMetadata(begin, end, QColor{}, Qt::NoBrush, comment);
     }
 
     void setMetadataSize(qint64 begin, qint64 length, const QColor& fg,
