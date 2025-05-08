@@ -874,7 +874,7 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
 void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
                            quint64 line) const {
     for(unsigned int col = 0u; col < m_options.linelength;) {
-        QHexCharFormat cf;
+        QHexCharFormat cf{};
 
         for(unsigned int byteidx = 0u; byteidx < m_options.grouplength;
             byteidx++, col++) {
@@ -1215,7 +1215,7 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
                 // Remove previous metadata's style, if needed
                 if(offset == metadata.begin) {
                     if(metadata.comment.isEmpty())
-                        selcf.underline = {};
+                        selcf.underline = QColor{};
                     if(!metadata.format.foreground.isValid())
                         selcf.foreground = Qt::color1;
                     if(metadata.format.background == Qt::NoBrush)
