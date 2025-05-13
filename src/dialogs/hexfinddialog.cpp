@@ -35,7 +35,7 @@ HexFindDialog::HexFindDialog(Type type, QHexView* parent)
     m_hexvalidator = new QRegularExpressionValidator(
         QRegularExpression{"[0-9A-Fa-f ]+"}, this);
     m_hexpvalidator = new QRegularExpressionValidator(
-        QRegularExpression{"[0-9A-Fa-f \\?]+"}, this);
+        QRegularExpression{"[0-9A-Fa-f \\?\\.]+"}, this);
     m_dblvalidator = new QDoubleValidator(this);
     m_intvalidator = new QIntValidator(this);
 
