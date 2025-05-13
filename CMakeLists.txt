@@ -4,7 +4,7 @@ project(QHexView)
 
 option(QHEXVIEW_BUILD_EXAMPLE "Build Example Application" ON)
 option(QHEXVIEW_USE_QT5 "Enable Qt5 build" OFF)
-option(QHEXVIEW_ENABLE_DIALOGS "BuiltIn dialogs" OFF)
+option(QHEXVIEW_ENABLE_DIALOGS "BuiltIn dialogs" ON)
 
 if(QHEXVIEW_USE_QT5)
     find_package(Qt5 REQUIRED COMPONENTS Widgets)
