@@ -4,7 +4,6 @@
 #include <QPair>
 #include <QString>
 #include <QVariant>
-#include <qtypes.h>
 
 struct QHexOptions;
 class QHexView;
