@@ -340,12 +340,22 @@ bool HexFindDialog::prepareOptions(QString& q, QHexFindMode& mode,
 void HexFindDialog::prepareTextMode(QLayout* l) {
     auto* cbcasesensitive = new QCheckBox("Case sensitive");
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+    connect(cbcasesensitive, &QCheckBox::checkStateChanged, this,
+            [this](Qt::CheckState state) {
+                if(state == Qt::Checked)
+                    m_findoptions |= QHexFindOptions::CaseSensitive;
+                else
+                    m_findoptions &= ~QHexFindOptions::CaseSensitive;
+            });
+#else
     connect(cbcasesensitive, &QCheckBox::stateChanged, this, [this](int state) {
         if(state == Qt::Checked)
             m_findoptions |= QHexFindOptions::CaseSensitive;
         else
             m_findoptions &= ~QHexFindOptions::CaseSensitive;
     });
+#endif
 
     auto* vlayout = new QVBoxLayout(new QWidget());
     vlayout->addWidget(cbcasesensitive);
