@@ -8,7 +8,6 @@
 #include <QList>
 #include <QtEndian>
 #include <limits>
-#include <qhashfunctions.h>
 
 #if defined(_WIN32) && _MSC_VER <= 1916 // v141_xp
 #include <ctype.h>
