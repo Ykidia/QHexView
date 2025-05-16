@@ -127,18 +127,18 @@ void QHexMetadata::clearMetadata(qint64 line, ClearMetadataCallback&& cb) {
 }
 
 void QHexMetadata::setMetadata(const QHexMetadataItem& mi) {
-    if(!m_options->linelength)
+    if(!m_options->line_length)
         return;
 
-    const qint64 firstline = mi.begin / m_options->linelength;
-    const qint64 lastline = mi.end / m_options->linelength;
+    const qint64 firstline = mi.begin / m_options->line_length;
+    const qint64 lastline = mi.end / m_options->line_length;
     bool notify = false;
 
     for(auto line = firstline; line <= lastline; line++) {
-        auto start = line == firstline ? mi.begin % m_options->linelength : 0;
+        auto start = line == firstline ? mi.begin % m_options->line_length : 0;
         auto length = line == lastline
-                          ? (mi.end % m_options->linelength) - start
-                          : m_options->linelength;
+                          ? (mi.end % m_options->line_length) - start
+                          : m_options->line_length;
         if(length <= 0)
             continue;
 

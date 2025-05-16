@@ -1,11 +1,13 @@
 #pragma once
 
-#include <QHexView/model/commands/hexcommand.h>
+#include <QHexView/model/commands/hexviewcommand.h>
 
-class InsertCommand: public HexCommand {
+class QHexViewInsertCommand: public QHexViewCommand {
 public:
-    InsertCommand(QHexBuffer* buffer, QHexDocument* document, qint64 offset,
-                  const QByteArray& data, QUndoCommand* parent = nullptr);
+    QHexViewInsertCommand(QHexBuffer* buffer, const QHexChanges& changes,
+                          QHexDocument* document, qint64 offset,
+                          const QByteArray& data,
+                          QUndoCommand* parent = nullptr);
     void undo() override;
     void redo() override;
 };

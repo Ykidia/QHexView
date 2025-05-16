@@ -353,11 +353,11 @@ QByteArray toHex(const QByteArray& ba, char sep) {
 QByteArray toHex(const QByteArray& ba) { return QHexUtils::toHex(ba, '\0'); }
 
 qint64 positionToOffset(const QHexOptions* options, QHexPosition pos) {
-    return options->linelength * pos.line + pos.column;
+    return options->line_length * pos.line + pos.column;
 }
 
 QHexPosition offsetToPosition(const QHexOptions* options, qint64 offset) {
-    return {offset / options->linelength, offset % options->linelength};
+    return {offset / options->line_length, offset % options->line_length};
 }
 
 bool checkPattern(const QString& s) {

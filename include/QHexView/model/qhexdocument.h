@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QDebug>
 #include <QHexView/model/buffer/qhexbuffer.h>
+#include <QHexView/model/qhexchanges.h>
 #include <QHexView/model/qhexmetadata.h>
 #include <QUndoStack>
 
@@ -19,14 +19,20 @@ public:
 private:
     explicit QHexDocument(QHexBuffer* buffer, QObject* parent = nullptr);
     bool accept(qint64 idx) const;
+    void removeChange(qint64 offset, qint64 length);
+    void mergeChanges();
+    void restoreChanges();
 
 public:
+    bool isOffsetChanged(qint64 offset) const;
     bool isEmpty() const;
     bool isModified() const;
     bool canUndo() const;
     bool canRedo() const;
+    bool trackChanges() const;
     void setData(const QByteArray& ba);
     void setData(QHexBuffer* buffer);
+    void setTrackChanges(bool b);
     qint64 length() const;
     qint64 indexOf(const QByteArray& ba, qint64 from = 0);
     qint64 lastIndexOf(const QByteArray& ba, qint64 from = 0);
@@ -34,6 +40,7 @@ public:
     uchar at(int offset) const;
 
 public Q_SLOTS:
+    void clearChanges();
     void clearModified();
     void undo();
     void redo();
@@ -64,6 +71,7 @@ public:
     static QHexDocument* create(QObject* parent = nullptr);
 
 Q_SIGNALS:
+    void trackChangesChanged(bool trackchanges);
     void modifiedChanged(bool modified);
     void canUndoChanged(bool canundo);
     void canRedoChanged(bool canredo);
@@ -75,6 +83,8 @@ Q_SIGNALS:
 private:
     QHexBuffer* m_buffer;
     QUndoStack* m_undostack;
+    QHexChanges m_changes;
+    bool m_trackchanges{false};
 
     friend class QHexView;
 };

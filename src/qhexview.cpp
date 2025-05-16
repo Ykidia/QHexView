@@ -189,20 +189,20 @@ const QHexMetadata* QHexView::hexMetadata() const { return m_hexmetadata; }
 QHexOptions QHexView::options() const { return m_options; }
 
 void QHexView::setOptions(const QHexOptions& options) {
-    auto oldlinelength = m_options.linelength;
+    auto oldlinelength = m_options.line_length;
     m_options = options;
 
-    if(oldlinelength != m_options.linelength)
+    if(oldlinelength != m_options.line_length)
         m_hexmetadata->invalidate();
 
     this->checkAndUpdate();
 }
 
 void QHexView::setBaseAddress(quint64 baseaddress) {
-    if(m_options.baseaddress == baseaddress)
+    if(m_options.base_address == baseaddress)
         return;
 
-    m_options.baseaddress = baseaddress;
+    m_options.base_address = baseaddress;
     this->checkAndUpdate();
 }
 
@@ -227,6 +227,8 @@ void QHexView::setDocument(QHexDocument* doc) {
         disconnect(m_hexdocument, &QHexDocument::changed, this, nullptr);
         disconnect(m_hexdocument, &QHexDocument::dataChanged, this, nullptr);
         disconnect(m_hexdocument, &QHexDocument::reset, this, nullptr);
+        disconnect(m_hexdocument, &QHexDocument::trackChangesChanged, this,
+                   nullptr);
         disconnect(m_hexdocument, &QHexDocument::modifiedChanged, this,
                    nullptr);
     }
@@ -242,6 +244,9 @@ void QHexView::setDocument(QHexDocument* doc) {
     connect(m_hexdocument, &QHexDocument::dataChanged, this,
             &QHexView::dataChanged);
 
+    connect(m_hexdocument, &QHexDocument::trackChangesChanged, this,
+            &QHexView::trackChangesChanged);
+
     connect(m_hexdocument, &QHexDocument::modifiedChanged, this,
             &QHexView::modifiedChanged);
 
@@ -253,23 +258,24 @@ void QHexView::setDocument(QHexDocument* doc) {
 
 void QHexView::setData(const QByteArray& ba) { m_hexdocument->setData(ba); }
 void QHexView::setData(QHexBuffer* buffer) { m_hexdocument->setData(buffer); }
+void QHexView::setTrackChanges(bool b) { m_hexdocument->setTrackChanges(b); }
 
 void QHexView::setCursorMode(QHexCursor::Mode mode) {
     m_hexcursor->setMode(mode);
 }
 
 void QHexView::setByteColor(quint8 b, const QHexCharFormat& c) {
-    m_options.bytecolors[b] = c;
+    m_options.byte_colors[b] = c;
     this->checkAndUpdate();
 }
 
 void QHexView::setByteForeground(quint8 b, const QColor& c) {
-    m_options.bytecolors[b].foreground = c;
+    m_options.byte_colors[b].foreground = c;
     this->checkAndUpdate();
 }
 
 void QHexView::setByteBackground(quint8 b, const QBrush& c) {
-    m_options.bytecolors[b].background = c;
+    m_options.byte_colors[b].background = c;
     this->checkAndUpdate();
 }
 
@@ -361,17 +367,17 @@ void QHexView::copyVisual() const {
 
     for(qint64 i = 0, l = 0; line < this->lines() && l < this->visibleLines();
         l++, line++) {
-        quint64 address = line * m_options.linelength + this->baseAddress();
+        quint64 address = line * m_options.line_length + this->baseAddress();
         QString addrstr = QString::number(address, 16)
                               .rightJustified(this->addressWidth(), '0')
                               .toUpper();
 
         s += addrstr;
 
-        for(unsigned int col = 0u; col < m_options.linelength;) {
+        for(unsigned int col = 0u; col < m_options.line_length;) {
             s += " ";
 
-            for(unsigned int byteidx = 0u; byteidx < m_options.grouplength;
+            for(unsigned int byteidx = 0u; byteidx < m_options.group_length;
                 byteidx++, col++) {
                 qint64 pos = this->positionFromLineCol(line, col);
 
@@ -385,13 +391,13 @@ void QHexView::copyVisual() const {
                                       .toUpper()};
                 }
                 else
-                    s += QString(m_options.invalidchar).repeated(2);
+                    s += QString(m_options.invalid_char).repeated(2);
             }
         }
 
         s += " ";
 
-        for(unsigned int col = 0u; col < m_options.linelength; col++) {
+        for(unsigned int col = 0u; col < m_options.line_length; col++) {
             qint64 pos = this->positionFromLineCol(line, col);
 
             if(m_hexdocument->accept(pos)) {
@@ -399,13 +405,13 @@ void QHexView::copyVisual() const {
                          ? QChar{' '}
                          : (QChar::isPrint(bytes[static_cast<int>(i + col)])
                                 ? QChar{bytes[static_cast<int>(i + col)]}
-                                : m_options.unprintablechar);
+                                : m_options.unprintable_char);
             }
             else
-                s += m_options.invalidchar;
+                s += m_options.invalid_char;
         }
 
-        i += m_options.linelength;
+        i += m_options.line_length;
         s += "\n";
 
         if(i >= bytes.size())
@@ -420,7 +426,7 @@ void QHexView::copyFormat(const QHexCopyFormat& cf) const {
                            ? this->selectedBytes()
                            : m_hexdocument->read(m_hexcursor->offset(), 1);
 
-    bool islong = cf.linebreak && (bytes.length() > m_options.linelength);
+    bool islong = cf.linebreak && (bytes.length() > m_options.line_length);
     const QString PREFIX = cf.prefix.isEmpty()
                                ? QString{}
                                : QString{" "}.repeated(cf.prefix.size() + 1);
@@ -434,7 +440,7 @@ void QHexView::copyFormat(const QHexCopyFormat& cf) const {
     for(int i = 0; i < bytes.size(); i++) {
         if(i) {
             s += cf.separator;
-            if(cf.linebreak && !(i % m_options.linelength)) {
+            if(cf.linebreak && !(i % m_options.line_length)) {
                 s += "\n";
                 if(islong)
                     s += PREFIX;
@@ -506,14 +512,14 @@ void QHexView::removeSelection() {
 void QHexView::switchMode() { m_hexcursor->switchMode(); }
 
 void QHexView::setAddressWidth(unsigned int w) {
-    if(w == m_options.addresswidth)
+    if(w == m_options.address_width)
         return;
-    m_options.addresswidth = w;
+    m_options.address_width = w;
     this->checkState();
 }
 
 void QHexView::setScrollSteps(int scrollsteps) {
-    m_options.scrollsteps = scrollsteps;
+    m_options.scroll_steps = scrollsteps;
 }
 
 void QHexView::setReadOnly(bool r) { m_readonly = r; }
@@ -542,18 +548,18 @@ void QHexView::paint(QPainter* p) const {
 }
 
 void QHexView::checkOptions() {
-    if(m_options.grouplength > m_options.linelength)
-        m_options.grouplength = m_options.linelength;
+    if(m_options.group_length > m_options.line_length)
+        m_options.group_length = m_options.line_length;
 
-    m_options.addresswidth =
-        qMax<unsigned int>(m_options.addresswidth, this->calcAddressWidth());
+    m_options.address_width =
+        qMax<unsigned int>(m_options.address_width, this->calcAddressWidth());
 
     // Round to nearest multiple of 2
-    m_options.grouplength =
-        1u << (static_cast<unsigned int>(qFloor(m_options.grouplength / 2.0)));
+    m_options.group_length =
+        1u << (static_cast<unsigned int>(qFloor(m_options.group_length / 2.0)));
 
-    if(m_options.grouplength <= 1)
-        m_options.grouplength = 1;
+    if(m_options.group_length <= 1)
+        m_options.group_length = 1;
 
     if(!m_options.header_format.foreground.isValid()) {
         m_options.header_format.foreground =
@@ -562,17 +568,17 @@ void QHexView::checkOptions() {
 }
 
 void QHexView::setLineLength(unsigned int l) {
-    if(l == m_options.linelength)
+    if(l == m_options.line_length)
         return;
-    m_options.linelength = l;
+    m_options.line_length = l;
     m_hexmetadata->invalidate();
     this->checkAndUpdate(true);
 }
 
 void QHexView::setGroupLength(unsigned int l) {
-    if(l == m_options.grouplength)
+    if(l == m_options.group_length)
         return;
-    m_options.grouplength = l;
+    m_options.group_length = l;
     this->checkAndUpdate(true);
 }
 
@@ -589,7 +595,7 @@ void QHexView::checkState() {
 
     this->verticalScrollBar()->setRange(0, qMax<qint64>(0, vscrollmax));
     this->verticalScrollBar()->setPageStep(vislines - 1);
-    this->verticalScrollBar()->setSingleStep(m_options.scrollsteps);
+    this->verticalScrollBar()->setSingleStep(m_options.scroll_steps);
 
     qreal vw = this->verticalScrollBar()->isVisible()
                    ? this->verticalScrollBar()->width()
@@ -618,12 +624,12 @@ void QHexView::calcColumns() {
         return;
 
     m_hexcolumns.clear();
-    m_hexcolumns.reserve(m_options.linelength);
+    m_hexcolumns.reserve(m_options.line_length);
 
     auto x = this->hexColumnX(), cw = this->cellWidth() * 2;
 
-    for(auto i = 0u; i < m_options.linelength; i++) {
-        for(auto j = 0u; j < m_options.grouplength; j++, x += cw)
+    for(auto i = 0u; i < m_options.line_length; i++) {
+        for(auto j = 0u; j < m_options.group_length; j++, x += cw)
             m_hexcolumns.push_back(QRect(x, 0, cw, 0));
 
         x += this->cellWidth();
@@ -706,8 +712,8 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     QString addresslabel;
     if(m_hexdelegate)
         addresslabel = m_hexdelegate->addressHeader(this);
-    if(addresslabel.isEmpty() && !m_options.addresslabel.isEmpty())
-        addresslabel = m_options.addresslabel;
+    if(addresslabel.isEmpty() && !m_options.address_label.isEmpty())
+        addresslabel = m_options.address_label;
 
     QHexCharFormat cf = m_options.addressheader_format;
     merge_formats(cf, hcf);
@@ -724,14 +730,15 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(m_hexdelegate)
         hexlabel = m_hexdelegate->hexHeader(this);
     if(hexlabel.isEmpty())
-        hexlabel = m_options.hexlabel;
+        hexlabel = m_options.hex_label;
 
     if(hexlabel.isNull()) {
         ctx->drawText(" ", cf);
 
-        for(auto i = 0u; i < m_options.linelength; i += m_options.grouplength) {
+        for(auto i = 0u; i < m_options.line_length;
+            i += m_options.group_length) {
             QString h = QString::number(i, 16)
-                            .rightJustified(m_options.grouplength * 2, '0')
+                            .rightJustified(m_options.group_length * 2, '0')
                             .toUpper();
 
             QHexCharFormat icf = cf;
@@ -759,7 +766,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(m_hexdelegate)
         asciilabel = m_hexdelegate->asciiHeader(this);
     if(asciilabel.isEmpty())
-        asciilabel = m_options.asciilabel;
+        asciilabel = m_options.ascii_label;
 
     cf = m_options.asciiheader_format;
     merge_formats(cf, hcf);
@@ -767,7 +774,7 @@ void QHexView::drawHeader(PaintContext* ctx) const {
     if(asciilabel.isNull()) {
         ctx->drawText(" ", cf);
 
-        for(unsigned int i = 0; i < m_options.linelength; i++) {
+        for(unsigned int i = 0; i < m_options.line_length; i++) {
             QString a = QString::number(i, 16).toUpper();
             QHexCharFormat icf = cf;
 
@@ -838,7 +845,7 @@ void QHexView::drawDocument(PaintContext* ctx) const {
 }
 
 void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
-    quint64 address = line * m_options.linelength + this->baseAddress();
+    quint64 address = line * m_options.line_length + this->baseAddress();
     QString addrstr = QString::number(address, 16)
                           .rightJustified(this->addressWidth(), '0')
                           .toUpper();
@@ -873,10 +880,10 @@ void QHexView::drawAddressPart(PaintContext* ctx, quint64 line) const {
 
 void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
                            quint64 line) const {
-    for(unsigned int col = 0u; col < m_options.linelength;) {
+    for(unsigned int col = 0u; col < m_options.line_length;) {
         QHexCharFormat cf{};
 
-        for(unsigned int byteidx = 0u; byteidx < m_options.grouplength;
+        for(unsigned int byteidx = 0u; byteidx < m_options.group_length;
             byteidx++, col++) {
             QString s;
             quint8 b{};
@@ -892,7 +899,7 @@ void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
                                                              : 0x00;
             }
             else
-                s = QString(m_options.invalidchar).repeated(2);
+                s = QString(m_options.invalid_char).repeated(2);
 
             cf = this->drawFormat(ctx, b, s, QHexArea::Hex, line, col,
                                   static_cast<int>(col) < linebytes.size());
@@ -906,7 +913,7 @@ void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
 
 void QHexView::drawAsciiPart(PaintContext* ctx, const QByteArray& linebytes,
                              quint64 line) const {
-    for(unsigned int col = 0u; col < m_options.linelength; col++) {
+    for(unsigned int col = 0u; col < m_options.line_length; col++) {
         QString s;
         quint8 b{};
 
@@ -916,13 +923,13 @@ void QHexView::drawAsciiPart(PaintContext* ctx, const QByteArray& linebytes,
                     ? QChar{' '}
                     : (QChar::isPrint(linebytes.at(col))
                            ? QChar{linebytes.at(col)}
-                           : m_options.unprintablechar);
+                           : m_options.unprintable_char);
 
             b = static_cast<int>(col) < linebytes.size() ? linebytes.at(col)
                                                          : 0x00;
         }
         else
-            s = m_options.invalidchar;
+            s = m_options.invalid_char;
 
         this->drawFormat(ctx, b, s, QHexArea::Ascii, line, col,
                          static_cast<int>(col) < linebytes.size());
@@ -934,7 +941,7 @@ unsigned int QHexView::calcAddressWidth() const {
         return 0;
 
     auto maxaddr =
-        static_cast<quint64>(m_options.baseaddress + m_hexdocument->length());
+        static_cast<quint64>(m_options.base_address + m_hexdocument->length());
     if(maxaddr <= std::numeric_limits<quint32>::max())
         return 8;
     return QString::number(maxaddr, 16).size();
@@ -956,19 +963,19 @@ qint64 QHexView::lastLine() const { return qMax<qint64>(0, this->lines() - 1); }
 qreal QHexView::hexColumnWidth() const {
     int l = 0;
 
-    for(auto i = 0u; i < m_options.linelength; i += m_options.grouplength)
-        l += (2 * m_options.grouplength) + 1;
+    for(auto i = 0u; i < m_options.line_length; i += m_options.group_length)
+        l += (2 * m_options.group_length) + 1;
 
     return this->getNCellsWidth(l);
 }
 
 unsigned int QHexView::addressWidth() const {
-    if(!m_hexdocument || m_options.addresswidth)
-        return m_options.addresswidth;
+    if(!m_hexdocument || m_options.address_width)
+        return m_options.address_width;
     return this->calcAddressWidth();
 }
 
-unsigned int QHexView::lineLength() const { return m_options.linelength; }
+unsigned int QHexView::lineLength() const { return m_options.line_length; }
 
 bool QHexView::isModified() const {
     return m_hexdocument && m_hexdocument->isModified();
@@ -982,6 +989,10 @@ bool QHexView::canRedo() const {
     return m_hexdocument && m_hexdocument->canRedo();
 }
 
+bool QHexView::trackChanges() const {
+    return m_hexdocument && m_hexdocument->trackChanges();
+}
+
 quint64 QHexView::offset() const { return m_hexcursor->offset(); }
 quint64 QHexView::address() const { return m_hexcursor->address(); }
 
@@ -989,15 +1000,15 @@ QHexPosition QHexView::positionFromOffset(quint64 offset) const {
     QHexPosition opt = QHexPosition::invalid();
 
     if(offset < static_cast<quint64>(m_hexdocument->length())) {
-        opt.line = offset / m_options.linelength;
-        opt.column = offset % m_options.linelength;
+        opt.line = offset / m_options.line_length;
+        opt.column = offset % m_options.line_length;
     }
 
     return opt;
 }
 
 QHexPosition QHexView::positionFromAddress(quint64 address) const {
-    return this->positionFromOffset(address - m_options.baseaddress);
+    return this->positionFromOffset(address - m_options.base_address);
 }
 
 QHexPosition QHexView::position() const { return m_hexcursor->position(); }
@@ -1018,13 +1029,13 @@ quint64 QHexView::selectionEndOffset() const {
     return m_hexcursor->selectionEndOffset();
 }
 
-quint64 QHexView::baseAddress() const { return m_options.baseaddress; }
+quint64 QHexView::baseAddress() const { return m_options.base_address; }
 
 quint64 QHexView::lines() const {
-    if(!m_hexdocument || !m_options.linelength)
+    if(!m_hexdocument || !m_options.line_length)
         return 0;
 
-    lldiv_t division = std::div(m_hexdocument->length(), m_options.linelength);
+    lldiv_t division = std::div(m_hexdocument->length(), m_options.line_length);
     quint64 lines = division.rem ? division.quot + 1 : division.quot;
     return !m_hexdocument->isEmpty() && !lines ? 1 : lines;
 }
@@ -1062,7 +1073,7 @@ qreal QHexView::asciiColumnX() const {
     return this->hexColumnX() + this->hexColumnWidth() + this->cellWidth();
 }
 qreal QHexView::endColumnX() const {
-    return this->asciiColumnX() + this->getNCellsWidth(m_options.linelength) +
+    return this->asciiColumnX() + this->getNCellsWidth(m_options.line_length) +
            this->cellWidth();
 }
 qreal QHexView::getNCellsWidth(int n) const { return n * this->cellWidth(); }
@@ -1083,7 +1094,7 @@ qreal QHexView::lineHeight() const { return m_fontmetrics.height(); }
 
 qint64 QHexView::positionFromLineCol(qint64 line, qint64 col) const {
     if(m_hexdocument) {
-        return qMin((line * m_options.linelength) + col,
+        return qMin((line * m_options.line_length) + col,
                     m_hexdocument->length());
     }
 
@@ -1176,8 +1187,8 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
             m_hexdelegate && m_hexdelegate->renderByte(offset, b, cf, this);
 
         if(!hasdelegate) {
-            auto it = m_options.bytecolors.find(b);
-            if(it != m_options.bytecolors.end())
+            auto it = m_options.byte_colors.find(b);
+            if(it != m_options.byte_colors.end())
                 cf = *it;
         }
 
@@ -1232,9 +1243,16 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
             selcf = cf;
     }
 
+    if(m_hexdocument->trackChanges()) {
+        qint64 offset = this->hexCursor()->positionToOffset(pos);
+
+        if(m_hexdocument->isOffsetChanged(offset))
+            cf = m_options.track_format;
+    }
+
     if(this->hexCursor()->isSelected(line, column)) {
-        auto offset = this->hexCursor()->positionToOffset(pos);
-        auto selend = this->hexCursor()->selectionEndOffset();
+        qint64 offset = this->hexCursor()->positionToOffset(pos);
+        qint64 selend = this->hexCursor()->selectionEndOffset();
 
         cf.background =
             this->palette().brush(QPalette::Normal, QPalette::Highlight);
@@ -1276,7 +1294,7 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
 void QHexView::moveNext(bool select) {
     auto line = this->hexCursor()->line(), column = this->hexCursor()->column();
 
-    if(column >= m_options.linelength - 1) {
+    if(column >= m_options.line_length - 1) {
         line++;
         column = 0;
     }
@@ -1675,7 +1693,7 @@ void QHexView::wheelEvent(QWheelEvent* e) {
     if(0 != ydelta) {
         int const ydeltaAbsolute = qAbs(ydelta);
         int const numberOfLinesToMove =
-            (ydeltaAbsolute * m_options.scrollsteps + 119) /
+            (ydeltaAbsolute * m_options.scroll_steps + 119) /
             120; // always move at least 1 line
         int const ydeltaSign = ydelta / ydeltaAbsolute;
 
@@ -1730,15 +1748,15 @@ QByteArray QHexView::selectedBytes() const {
 
 QByteArray QHexView::visibleBytes() const {
     auto line = static_cast<quint64>(this->verticalScrollBar()->value());
-    int nbytes = m_options.linelength * this->visibleLines();
+    int nbytes = m_options.line_length * this->visibleLines();
 
     return m_hexdocument
-               ? m_hexdocument->read(line * m_options.linelength, nbytes)
+               ? m_hexdocument->read(line * m_options.line_length, nbytes)
                : QByteArray{};
 }
 
 QByteArray QHexView::getLine(qint64 line) const {
-    return m_hexdocument ? m_hexdocument->read(line * m_options.linelength,
-                                               m_options.linelength)
+    return m_hexdocument ? m_hexdocument->read(line * m_options.line_length,
+                                               m_options.line_length)
                          : QByteArray{};
 }

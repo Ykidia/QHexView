@@ -24,11 +24,11 @@ QHexCursor::Mode QHexCursor::mode() const { return m_mode; }
 qint64 QHexCursor::offset() const { return this->positionToOffset(m_position); }
 
 qint64 QHexCursor::address() const {
-    return m_options->baseaddress + this->offset();
+    return m_options->base_address + this->offset();
 }
 
 quint64 QHexCursor::lineAddress() const {
-    return m_options->baseaddress + (m_position.line * m_options->linelength);
+    return m_options->base_address + (m_position.line * m_options->line_length);
 }
 
 qint64 QHexCursor::selectionStartOffset() const {

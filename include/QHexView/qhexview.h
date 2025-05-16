@@ -64,6 +64,7 @@ public:
     bool isModified() const;
     bool canUndo() const;
     bool canRedo() const;
+    bool trackChanges() const;
     quint64 offset() const;
     quint64 address() const;
     QHexPosition positionFromOffset(quint64 offset) const;
@@ -89,6 +90,7 @@ public:
     void setDocument(QHexDocument* doc);
     void setData(const QByteArray& ba);
     void setData(QHexBuffer* buffer);
+    void setTrackChanges(bool b);
     void setCursorMode(QHexCursor::Mode mode);
     void setByteColor(quint8 b, const QHexCharFormat& cf);
     void setByteForeground(quint8 b, const QColor& c);
@@ -193,6 +195,7 @@ private:
 Q_SIGNALS:
     void dataChanged(const QByteArray& data, quint64 offset,
                      QHexDocument::ChangeReason reason);
+    void trackChangesChanged(bool trackchanges);
     void modifiedChanged(bool modified);
     void positionChanged();
     void modeChanged();

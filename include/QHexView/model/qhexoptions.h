@@ -32,22 +32,23 @@ struct QHexCharFormat {
 
 struct QHexOptions {
     // Appearance
-    QChar unprintablechar{'.'};
-    QChar invalidchar{'?'};
-    QString addresslabel{""};
-    QString hexlabel;
-    QString asciilabel;
-    quint64 baseaddress{0};
+    QChar unprintable_char{'.'};
+    QChar invalid_char{'?'};
+    QString address_label{""};
+    QString hex_label;
+    QString ascii_label;
+    quint64 base_address{0};
     unsigned int flags{QHexFlags::None};
-    unsigned int linelength{0x10};
-    unsigned int addresswidth{0};
-    unsigned int grouplength{1};
-    int scrollsteps{1};
+    unsigned int line_length{0x10};
+    unsigned int address_width{0};
+    unsigned int group_length{1};
+    int scroll_steps{1};
 
     // Colors & Styles
-    QHash<quint8, QHexCharFormat> bytecolors;
+    QHash<quint8, QHexCharFormat> byte_colors;
     QColor linealt_background;
     QColor line_background;
+    QHexCharFormat track_format;
     QHexCharFormat header_format;
     QHexCharFormat address_format;
     QHexCharFormat addressheader_format;
