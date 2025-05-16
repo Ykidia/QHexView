@@ -48,7 +48,7 @@ struct QHexOptions {
     QHash<quint8, QHexCharFormat> byte_colors;
     QColor linealt_background;
     QColor line_background;
-    QHexCharFormat track_format;
+    QHexCharFormat trackchange_format;
     QHexCharFormat header_format;
     QHexCharFormat address_format;
     QHexCharFormat addressheader_format;
