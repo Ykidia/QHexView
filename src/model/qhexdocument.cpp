@@ -14,11 +14,13 @@ QHexDocument::QHexDocument(QHexBuffer* buffer, QObject* parent)
     m_buffer = buffer;
     m_buffer->setParent(this); // Take Ownership
 
-    connect(&m_undostack, &QUndoStack::canUndoChanged, this,
+    m_undostack = new QUndoStack(this);
+
+    connect(m_undostack, &QUndoStack::canUndoChanged, this,
             &QHexDocument::canUndoChanged);
-    connect(&m_undostack, &QUndoStack::canRedoChanged, this,
+    connect(m_undostack, &QUndoStack::canRedoChanged, this,
             &QHexDocument::canRedoChanged);
-    connect(&m_undostack, &QUndoStack::cleanChanged, this,
+    connect(m_undostack, &QUndoStack::cleanChanged, this,
             [&](bool clean) { Q_EMIT modifiedChanged(!clean); });
 }
 
@@ -32,9 +34,9 @@ qint64 QHexDocument::lastIndexOf(const QByteArray& ba, qint64 from) {
 
 bool QHexDocument::accept(qint64 idx) const { return m_buffer->accept(idx); }
 bool QHexDocument::isEmpty() const { return m_buffer->isEmpty(); }
-bool QHexDocument::isModified() const { return !m_undostack.isClean(); }
-bool QHexDocument::canUndo() const { return m_undostack.canUndo(); }
-bool QHexDocument::canRedo() const { return m_undostack.canRedo(); }
+bool QHexDocument::isModified() const { return !m_undostack->isClean(); }
+bool QHexDocument::canUndo() const { return m_undostack->canUndo(); }
+bool QHexDocument::canRedo() const { return m_undostack->canRedo(); }
 
 void QHexDocument::setData(const QByteArray& ba) {
     QHexBuffer* mb = new QMemoryBuffer();
@@ -46,7 +48,7 @@ void QHexDocument::setData(QHexBuffer* buffer) {
     if(!buffer)
         return;
 
-    m_undostack.clear();
+    m_undostack->clear();
     buffer->setParent(this);
 
     auto* oldbuffer = m_buffer;
@@ -60,7 +62,7 @@ void QHexDocument::setData(QHexBuffer* buffer) {
     Q_EMIT reset();
 }
 
-void QHexDocument::clearModified() { m_undostack.setClean(); }
+void QHexDocument::clearModified() { m_undostack->setClean(); }
 
 qint64 QHexDocument::length() const {
     return m_buffer ? m_buffer->length() : 0;
@@ -75,12 +77,12 @@ QHexDocument* QHexDocument::fromFile(QString filename, QObject* parent) {
 }
 
 void QHexDocument::undo() {
-    m_undostack.undo();
+    m_undostack->undo();
     Q_EMIT changed();
 }
 
 void QHexDocument::redo() {
-    m_undostack.redo();
+    m_undostack->redo();
     Q_EMIT changed();
 }
 
@@ -93,14 +95,14 @@ void QHexDocument::replace(qint64 offset, uchar b) {
 }
 
 void QHexDocument::insert(qint64 offset, const QByteArray& data) {
-    m_undostack.push(new InsertCommand(m_buffer, this, offset, data));
+    m_undostack->push(new InsertCommand(m_buffer, this, offset, data));
 
     Q_EMIT changed();
     Q_EMIT dataChanged(data, offset, ChangeReason::Insert);
 }
 
 void QHexDocument::replace(qint64 offset, const QByteArray& data) {
-    m_undostack.push(new ReplaceCommand(m_buffer, this, offset, data));
+    m_undostack->push(new ReplaceCommand(m_buffer, this, offset, data));
     Q_EMIT changed();
     Q_EMIT dataChanged(data, offset, ChangeReason::Replace);
 }
@@ -108,7 +110,7 @@ void QHexDocument::replace(qint64 offset, const QByteArray& data) {
 void QHexDocument::remove(qint64 offset, int len) {
     QByteArray data = m_buffer->read(offset, len);
 
-    m_undostack.push(new RemoveCommand(m_buffer, this, offset, len));
+    m_undostack->push(new RemoveCommand(m_buffer, this, offset, len));
     Q_EMIT changed();
     Q_EMIT dataChanged(data, offset, ChangeReason::Remove);
 }

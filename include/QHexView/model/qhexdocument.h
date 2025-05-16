@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDebug>
 #include <QHexView/model/buffer/qhexbuffer.h>
 #include <QHexView/model/qhexmetadata.h>
 #include <QUndoStack>
@@ -73,7 +74,7 @@ Q_SIGNALS:
 
 private:
     QHexBuffer* m_buffer;
-    QUndoStack m_undostack;
+    QUndoStack* m_undostack;
 
     friend class QHexView;
 };
