@@ -495,6 +495,11 @@ void QHexView::clearModified() {
         m_hexdocument->clearModified();
 }
 
+void QHexView::clearChanges() {
+    if(m_hexdocument)
+        m_hexdocument->clearChanges();
+}
+
 void QHexView::selectAll() {
     m_hexcursor->move(0);
     m_hexcursor->select(m_hexdocument->length());

@@ -125,6 +125,7 @@ public Q_SLOTS:
     void copy(bool hex = false) const;
     void paste(bool hex = false);
     void clearModified();
+    void clearChanges();
     void selectAll();
     void removeSelection();
     void switchMode();
