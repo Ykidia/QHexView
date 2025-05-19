@@ -39,6 +39,13 @@ void merge_formats(QHexCharFormat& dst, const QHexCharFormat& src) {
         dst.underline = src.underline;
 }
 
+QString qstring_rtrim(const QString s) {
+    QString res = s;
+    while(res.size() > 0 && res.at(res.size() - 1).isSpace())
+        res.chop(1);
+    return res;
+}
+
 } // namespace
 
 QHexView::PaintContext::PaintContext(const QHexView* hv, QPainter* p,
@@ -426,25 +433,34 @@ void QHexView::copyFormat(const QHexCopyFormat& cf) const {
                            ? this->selectedBytes()
                            : m_hexdocument->read(m_hexcursor->offset(), 1);
 
-    bool islong = cf.linebreak && (bytes.length() > m_options.line_length);
-    const QString PREFIX = cf.prefix.isEmpty()
-                               ? QString{}
-                               : QString{" "}.repeated(cf.prefix.size() + 1);
+    const bool IS_LONG =
+        cf.line_break && (bytes.length() > m_options.line_length);
+    const QString INDENT_CHAR = cf.use_tabs ? "\t" : " ";
+
+    QString indentstr;
+
+    if(cf.indent == -1 && !cf.prefix.isEmpty())
+        indentstr = INDENT_CHAR.repeated(cf.prefix.size() + 1);
+    else if(cf.indent > 0)
+        indentstr = INDENT_CHAR.repeated(cf.indent);
 
     QString s;
     s += cf.prefix;
 
-    if(islong)
-        s += "\n" + PREFIX;
+    if(IS_LONG)
+        s += "\n" + indentstr;
 
     for(int i = 0; i < bytes.size(); i++) {
         if(i) {
-            s += cf.separator;
-            if(cf.linebreak && !(i % m_options.line_length)) {
+            if(cf.line_break && !(i % m_options.line_length)) {
+                s += cf.trim_last_separator ? qstring_rtrim(cf.separator)
+                                            : cf.separator;
                 s += "\n";
-                if(islong)
-                    s += PREFIX;
+                if(IS_LONG)
+                    s += indentstr;
             }
+            else
+                s += cf.separator;
         }
 
         s += cf.byte_prefix;
@@ -452,7 +468,7 @@ void QHexView::copyFormat(const QHexCopyFormat& cf) const {
         s += cf.byte_suffix;
     }
 
-    if(islong)
+    if(IS_LONG)
         s += "\n";
 
     s += cf.suffix;

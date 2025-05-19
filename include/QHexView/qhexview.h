@@ -20,7 +20,10 @@ struct QHexCopyFormat {
     QString byte_prefix;
     QString byte_suffix;
     QString separator;
-    bool linebreak{false};
+    int indent{-1};
+    bool trim_last_separator{false};
+    bool line_break{false};
+    bool use_tabs{false};
 };
 
 class QHexView: public QAbstractScrollArea {
