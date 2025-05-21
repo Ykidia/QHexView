@@ -53,7 +53,7 @@ QHexView::PaintContext::PaintContext(const QHexView* hv, QPainter* p,
     : hexview{hv}, painter{p}, fontmetrics{fm}, x{0}, y{0} {}
 
 void QHexView::PaintContext::drawText(const QString& s,
-                                      const QHexCharFormat& cf) {
+                                      const QHexCharFormat& cf, bool pad) {
     this->format = cf;
 
     // Always apply a valid foreground color
@@ -62,10 +62,10 @@ void QHexView::PaintContext::drawText(const QString& s,
             this->hexview->palette().color(QPalette::WindowText);
     }
 
-    this->drawText(s);
+    this->drawText(s, pad);
 }
 
-void QHexView::PaintContext::drawText(const QString& s) {
+void QHexView::PaintContext::drawText(const QString& s, bool pad) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     qreal w = this->fontmetrics->horizontalAdvance(s);
 #else
@@ -74,8 +74,16 @@ void QHexView::PaintContext::drawText(const QString& s) {
 
     QRectF r = {this->x, this->y, w, this->hexview->lineHeight()};
 
-    if(this->format.background != Qt::NoBrush)
-        this->painter->fillRect(r, this->format.background);
+    if(this->format.background != Qt::NoBrush) {
+        QRectF br = r;
+
+        if(pad) {
+            br.adjust(-this->hexview->cellWidth() / 2, 0,
+                      this->hexview->cellWidth() / 2, 0);
+        }
+
+        this->painter->fillRect(br, this->format.background);
+    }
 
     this->painter->setPen(this->format.foreground);
     this->painter->drawText(r, 0, s);
@@ -1308,7 +1316,7 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
         }
     }
 
-    ctx->drawText(s, cf);
+    ctx->drawText(s, cf, area == QHexArea::Hex);
     return selcf;
 }
 

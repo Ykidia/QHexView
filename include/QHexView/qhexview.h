@@ -38,8 +38,9 @@ class QHexView: public QAbstractScrollArea {
 
         explicit PaintContext(const QHexView* hv, QPainter* p,
                               const QFontMetricsF* fm);
-        void drawText(const QString& s, const QHexCharFormat& cf);
-        void drawText(const QString& s);
+        void drawText(const QString& s, const QHexCharFormat& cf,
+                      bool pad = false);
+        void drawText(const QString& s, bool pad = false);
         void fillLine(QColor c) const;
         void clearFormat();
         void nextLine();
