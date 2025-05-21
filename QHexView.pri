@@ -2,7 +2,7 @@ QT += widgets
 
 DEFINES += "QHEXVIEW_ENABLE_DIALOGS=1"
 
-HEADERS += $$PWD/include/QHexView/model/commands/hexcommand.h \
+HEADERS += $$PWD/include/QHexView/model/commands/hexviewcommand.h \
            $$PWD/include/QHexView/model/commands/insertcommand.h \
            $$PWD/include/QHexView/model/commands/removecommand.h \
            $$PWD/include/QHexView/model/commands/replacecommand.h \
@@ -12,6 +12,7 @@ HEADERS += $$PWD/include/QHexView/model/commands/hexcommand.h \
            $$PWD/include/QHexView/model/buffer/qmemoryrefbuffer.h \
            $$PWD/include/QHexView/model/buffer/qmappedfilebuffer.h \
            $$PWD/include/QHexView/model/qhexdelegate.h \
+           $$PWD/include/QHexView/model/qhexchanges.h \
            $$PWD/include/QHexView/model/qhexutils.h \
            $$PWD/include/QHexView/model/qhexcursor.h \
            $$PWD/include/QHexView/model/qhexmetadata.h \
@@ -20,7 +21,7 @@ HEADERS += $$PWD/include/QHexView/model/commands/hexcommand.h \
            $$PWD/include/QHexView/dialogs/hexfinddialog.h \
            $$PWD/include/QHexView/qhexview.h
 
-SOURCES += $$PWD/src/model/commands/hexcommand.cpp \
+SOURCES += $$PWD/src/model/commands/hexviewcommand.cpp \
            $$PWD/src/model/commands/insertcommand.cpp \
            $$PWD/src/model/commands/removecommand.cpp \
            $$PWD/src/model/commands/replacecommand.cpp \
