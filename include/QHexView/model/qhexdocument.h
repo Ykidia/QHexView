@@ -11,20 +11,19 @@ class QHexDocument: public QObject {
     Q_OBJECT
 
 public:
-    enum class ChangeReason { Insert, Remove, Replace };
     enum class FindDirection { Forward, Backward };
-    Q_ENUM(ChangeReason);
     Q_ENUM(FindDirection);
 
 private:
     explicit QHexDocument(QHexBuffer* buffer, QObject* parent = nullptr);
+    qsizetype findChange(qint64 offset) const;
     bool accept(qint64 idx) const;
-    void removeChange(qint64 offset, qint64 length);
-    void mergeChanges();
+    void removeChange(qint64 offset, qint64 n);
+    void moveChanges(qint64 offset, qint64 n);
     void restoreChanges();
 
 public:
-    bool isOffsetChanged(qint64 offset) const;
+    QHexChangeReason getChangeReason(qint64 offset) const;
     bool isEmpty() const;
     bool isModified() const;
     bool canUndo() const;
@@ -76,7 +75,7 @@ Q_SIGNALS:
     void canUndoChanged(bool canundo);
     void canRedoChanged(bool canredo);
     void dataChanged(const QByteArray& data, quint64 offset,
-                     QHexDocument::ChangeReason reason);
+                     QHexChangeReason reason);
     void changed();
     void reset();
 

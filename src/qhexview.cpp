@@ -1275,8 +1275,17 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
     if(m_hexdocument->trackChanges()) {
         qint64 offset = this->hexCursor()->positionToOffset(pos);
 
-        if(m_hexdocument->isOffsetChanged(offset))
-            cf = m_options.trackchange_format;
+        switch(m_hexdocument->getChangeReason(offset)) {
+            case QHexChangeReason::Replace:
+                cf = m_options.trackchange_format_ovr;
+                break;
+
+            case QHexChangeReason::Insert:
+                cf = m_options.trackchange_format_ins;
+                break;
+
+            default: break;
+        }
     }
 
     if(this->hexCursor()->isSelected(line, column)) {

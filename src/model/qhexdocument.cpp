@@ -32,9 +32,14 @@ qint64 QHexDocument::lastIndexOf(const QByteArray& ba, qint64 from) {
     return m_buffer->lastIndexOf(ba, from);
 }
 
-bool QHexDocument::isOffsetChanged(qint64 offset) const {
+QHexChangeReason QHexDocument::getChangeReason(qint64 offset) const {
+    int idx = this->findChange(offset);
+    return idx != -1 ? m_changes[idx].reason : QHexChangeReason::None;
+}
+
+qsizetype QHexDocument::findChange(qint64 offset) const {
     if(!m_trackchanges)
-        return false;
+        return -1;
 
     int left = 0, right = m_changes.size() - 1;
 
@@ -47,10 +52,10 @@ bool QHexDocument::isOffsetChanged(qint64 offset) const {
         else if(offset >= r.end)
             left = mid + 1;
         else
-            return true; // found
+            return mid; // found
     }
 
-    return false;
+    return -1;
 }
 
 bool QHexDocument::accept(qint64 idx) const { return m_buffer->accept(idx); }
@@ -136,31 +141,41 @@ void QHexDocument::replace(qint64 offset, uchar b) {
 }
 
 void QHexDocument::insert(qint64 offset, const QByteArray& data) {
+    if(m_trackchanges) {
+        m_changes.push_back({
+            QHexChangeReason::Insert,
+            offset,
+            offset + data.size(),
+        });
+
+        std::sort(m_changes.begin(), m_changes.end());
+        this->moveChanges(offset, data.size());
+    }
+
     m_undostack->push(
         new QHexViewInsertCommand(m_buffer, m_changes, this, offset, data));
 
-    if(m_trackchanges) {
-        m_changes.push_back({offset, offset + data.size()});
-        std::sort(m_changes.begin(), m_changes.end());
-        this->mergeChanges();
-    }
-
     Q_EMIT changed();
-    Q_EMIT dataChanged(data, offset, ChangeReason::Insert);
+    Q_EMIT dataChanged(data, offset, QHexChangeReason::Insert);
 }
 
 void QHexDocument::replace(qint64 offset, const QByteArray& data) {
     m_undostack->push(
         new QHexViewReplaceCommand(m_buffer, m_changes, this, offset, data));
 
-    if(m_trackchanges) {
-        m_changes.push_back({offset, offset + data.size()});
+    // NOTE: Mark replacements only if no change has been found
+    if(m_trackchanges && this->findChange(offset) == -1) {
+        m_changes.push_back({
+            QHexChangeReason::Replace,
+            offset,
+            offset + data.size(),
+        });
+
         std::sort(m_changes.begin(), m_changes.end());
-        this->mergeChanges();
     }
 
     Q_EMIT changed();
-    Q_EMIT dataChanged(data, offset, ChangeReason::Replace);
+    Q_EMIT dataChanged(data, offset, QHexChangeReason::Replace);
 }
 
 void QHexDocument::remove(qint64 offset, int len) {
@@ -172,7 +187,7 @@ void QHexDocument::remove(qint64 offset, int len) {
         this->removeChange(offset, len);
 
     Q_EMIT changed();
-    Q_EMIT dataChanged(data, offset, ChangeReason::Remove);
+    Q_EMIT dataChanged(data, offset, QHexChangeReason::Remove);
 }
 
 QByteArray QHexDocument::read(qint64 offset, int len) const {
@@ -186,47 +201,44 @@ bool QHexDocument::saveTo(QIODevice* device) {
     return true;
 }
 
-void QHexDocument::removeChange(qint64 offset, qint64 length) {
+void QHexDocument::removeChange(qint64 offset, qint64 n) {
     QHexChanges newchanges;
 
     for(const QHexChangeRange& cr : m_changes) {
         if(cr.end <= offset)
             newchanges.push_back(cr); // before removed range
-        else if(cr.start >= offset + length) {
-            newchanges.push_back(
-                {cr.start - length, cr.end - length}); // after: shift back
+        else if(cr.start >= offset + n) {
+            newchanges.push_back({
+                cr.reason,
+                cr.start - n,
+                cr.end - n,
+            }); // after: shift back
         }
         else { // overlaps
             if(cr.start < offset)
-                newchanges.push_back({cr.start, offset}); // left part
-            if(cr.end > offset + length)
-                newchanges.push_back({offset, cr.end - length}); // right part
+                newchanges.push_back(
+                    {cr.reason, cr.start, offset}); // left part
+            if(cr.end > offset + n)
+                newchanges.push_back({
+                    cr.reason,
+                    offset,
+                    cr.end - n,
+                }); // right part
         }
     }
 
     m_changes.swap(newchanges);
 }
 
-void QHexDocument::mergeChanges() {
-    if(m_changes.isEmpty())
+void QHexDocument::moveChanges(qint64 offset, qint64 n) {
+    qsizetype idx = this->findChange(offset);
+    if(idx == -1)
         return;
 
-    QHexChanges newchanges;
-    QHexChangeRange current = m_changes.first();
-
-    for(int i = 1; i < m_changes.size(); ++i) {
-        const QHexChangeRange& next = m_changes[i];
-
-        if(current.end >= next.start)
-            current.end = qMax(current.end, next.end);
-        else {
-            newchanges.push_back(current);
-            current = next;
-        }
+    for(idx = idx + 1; idx < m_changes.size(); idx++) {
+        m_changes[idx].start += n;
+        m_changes[idx].end += n;
     }
-
-    newchanges.push_back(current);
-    m_changes.swap(newchanges);
 }
 
 void QHexDocument::restoreChanges() {

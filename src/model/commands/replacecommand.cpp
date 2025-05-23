@@ -12,7 +12,7 @@ QHexViewReplaceCommand::QHexViewReplaceCommand(
 void QHexViewReplaceCommand::undo() {
     m_buffer->replace(m_offset, m_olddata);
     Q_EMIT m_hexdocument->dataChanged(m_olddata, m_offset,
-                                      QHexDocument::ChangeReason::Replace);
+                                      QHexChangeReason::Replace);
 }
 
 void QHexViewReplaceCommand::redo() {

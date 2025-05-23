@@ -199,7 +199,7 @@ private:
 
 Q_SIGNALS:
     void dataChanged(const QByteArray& data, quint64 offset,
-                     QHexDocument::ChangeReason reason);
+                     QHexChangeReason reason);
     void trackChangesChanged(bool trackchanges);
     void modifiedChanged(bool modified);
     void positionChanged();

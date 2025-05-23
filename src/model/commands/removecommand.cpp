@@ -14,7 +14,7 @@ QHexViewRemoveCommand::QHexViewRemoveCommand(QHexBuffer* buffer,
 void QHexViewRemoveCommand::undo() {
     m_buffer->insert(m_offset, m_data);
     Q_EMIT m_hexdocument->dataChanged(m_data, m_offset,
-                                      QHexDocument::ChangeReason::Insert);
+                                      QHexChangeReason::Insert);
 }
 
 void QHexViewRemoveCommand::redo() {
