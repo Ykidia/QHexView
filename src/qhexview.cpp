@@ -77,7 +77,8 @@ void QHexView::PaintContext::drawText(const QString& s, bool pad) {
     if(this->format.background != Qt::NoBrush) {
         QRectF br = r;
 
-        if(hexview->m_options.hasFlag(QHexFlags::PaddedHighlight) && pad) {
+        if(this->hexview->m_options.hasFlag(QHexFlags::PaddedHighlight) &&
+           this->hexview->m_options.group_length == 1 && pad) {
             br.adjust(-this->hexview->cellWidth() / 2, 0,
                       this->hexview->cellWidth() / 2, 0);
         }
