@@ -76,6 +76,7 @@ void QHexDocument::setData(QHexBuffer* buffer) {
     if(!buffer)
         return;
 
+    m_changes.clear();
     m_undostack->clear();
     buffer->setParent(this);
 
