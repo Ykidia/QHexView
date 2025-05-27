@@ -17,6 +17,7 @@ enum : unsigned int {
     HighlightAddress = (1 << 6),
     HighlightColumn = (1 << 7),
     PaddedAddress = (1 << 8),
+    PaddedHighlight = (1 << 9),
 
     Separators = HSeparator | VSeparator,
     Styled = StyledHeader | StyledAddress,
