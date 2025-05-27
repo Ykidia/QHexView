@@ -1715,10 +1715,8 @@ void QHexView::wheelEvent(QWheelEvent* e) {
     e->ignore();
 
 #if defined(Q_OS_OSX)
-    // In macOS scrollbar invisibility should not prevent scrolling from
-    // working
-    if(!m_hexdocument)
-        return;
+    // In macOS scrollbar invisibility should not prevent
+    // scrolling from working
 #else
     if(!m_hexdocument || !this->verticalScrollBar()->isVisible())
         return;
