@@ -197,9 +197,11 @@ QRectF QHexView::asciiRect() const {
 }
 
 QHexDocument* QHexView::hexDocument() const { return m_hexdocument; }
+
 QHexCursor* QHexView::hexCursor() const {
     return m_hexdocument ? m_hexcursor : nullptr;
 }
+
 const QHexMetadata* QHexView::hexMetadata() const { return m_hexmetadata; }
 QHexOptions QHexView::options() const { return m_options; }
 
@@ -1277,11 +1279,11 @@ QHexCharFormat QHexView::drawFormat(PaintContext* ctx, quint8 b,
 
         switch(m_hexdocument->getChangeReason(offset)) {
             case QHexChangeReason::Replace:
-                cf = m_options.trackchange_format_ovr;
+                cf = m_options.trackchange_format_overwrite;
                 break;
 
             case QHexChangeReason::Insert:
-                cf = m_options.trackchange_format_ins;
+                cf = m_options.trackchange_format_insert;
                 break;
 
             default: break;
