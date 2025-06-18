@@ -583,8 +583,9 @@ void QHexView::checkOptions() {
     if(m_options.group_length > m_options.line_length)
         m_options.group_length = m_options.line_length;
 
-    m_options.address_width =
-        qMax<unsigned int>(m_options.address_width, this->calcAddressWidth());
+    // Only auto-calculate if not manually set
+    if(m_options.address_width == 0)
+        m_options.address_width = this->calcAddressWidth();
 
     // Round to nearest multiple of 2
     m_options.group_length =
@@ -672,13 +673,23 @@ void QHexView::ensureVisible() {
     if(!m_hexdocument)
         return;
 
-    auto pos = m_hexcursor->position();
-    auto vlines = this->visibleLines();
+    QHexPosition pos = m_hexcursor->position();
+    int vlines = this->visibleLines();
+    int vscroll = this->verticalScrollBar()->value();
 
-    if(pos.line >= (this->verticalScrollBar()->value() + vlines))
-        this->verticalScrollBar()->setValue(pos.line - vlines + 1);
-    else if(pos.line < this->verticalScrollBar()->value())
-        this->verticalScrollBar()->setValue(pos.line);
+    // Calculate target scroll position to center the cursor
+    qint64 tgtscroll = pos.line - (vlines / 2);
+
+    // Ensure we don't scroll past the beginning or end
+    if(tgtscroll < 0)
+        tgtscroll = 0;
+    else if(tgtscroll > this->lines() - vlines)
+        tgtscroll = this->lines() - vlines;
+
+    // Line is outside of visible range
+    if((pos.line < this->verticalScrollBar()->value()) ||
+       (pos.line >= (this->verticalScrollBar()->value() + vlines)))
+        this->verticalScrollBar()->setValue(tgtscroll);
     else
         this->viewport()->update();
 }
