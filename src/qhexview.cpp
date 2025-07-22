@@ -659,11 +659,12 @@ void QHexView::calcColumns() {
     m_hexcolumns.clear();
     m_hexcolumns.reserve(m_options.line_length);
 
-    auto x = this->hexColumnX(), cw = this->cellWidth() * 2;
+    qreal x = this->hexColumnX() + this->cellWidth(); // Pad to align
+    qreal cw = this->cellWidth() * 2;
 
-    for(auto i = 0u; i < m_options.line_length; i++) {
-        for(auto j = 0u; j < m_options.group_length; j++, x += cw)
-            m_hexcolumns.push_back(QRect(x, 0, cw, 0));
+    for(unsigned int i = 0u; i < m_options.line_length;) {
+        for(unsigned int j = 0u; j < m_options.group_length; i++, j++, x += cw)
+            m_hexcolumns.push_back(QRectF{x, 0, cw, 0});
 
         x += this->cellWidth();
     }
@@ -698,7 +699,7 @@ void QHexView::drawSeparators(QPainter* p) const {
     if(!m_options.hasFlag(QHexFlags::Separators))
         return;
 
-    auto oldpen = p->pen();
+    const QPen& oldpen = p->pen();
     p->setPen(m_options.separator_color.isValid()
                   ? m_options.separator_color
                   : this->palette().color(QPalette::Dark));
@@ -1112,13 +1113,16 @@ qint64 QHexView::find(const QVariant& value, qint64 offset, QHexFindMode mode,
 qreal QHexView::hexColumnX() const {
     return this->getNCellsWidth(this->addressWidth() + 2);
 }
+
 qreal QHexView::asciiColumnX() const {
     return this->hexColumnX() + this->hexColumnWidth() + this->cellWidth();
 }
+
 qreal QHexView::endColumnX() const {
     return this->asciiColumnX() + this->getNCellsWidth(m_options.line_length) +
            this->cellWidth();
 }
+
 qreal QHexView::getNCellsWidth(int n) const { return n * this->cellWidth(); }
 
 qreal QHexView::cellWidth() const {
@@ -1648,6 +1652,19 @@ void QHexView::paintEvent(QPaintEvent*) {
         m_hexdelegate->paint(&painter, this);
     else
         this->paint(&painter);
+
+    // DEBUG: Render hex-columns area
+    // int i = 0;
+    //
+    // for(const auto& col : m_hexcolumns) {
+    //     QRectF r = col;
+    //     r.setY(0);
+    //     r.setHeight(this->viewport()->height());
+    //
+    //     QColor c{i++ % 2 ? Qt::darkRed : Qt::darkGreen};
+    //     c.setAlpha(128);
+    //     painter.fillRect(r, c);
+    // }
 }
 
 void QHexView::resizeEvent(QResizeEvent* e) {
