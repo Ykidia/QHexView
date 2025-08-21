@@ -85,8 +85,8 @@ void QHexMetadata::unhighlight(qint64 line) {
             return false;
 
         if(!mi.comment.isEmpty()) {
-            mi.format.foreground = {};
-            mi.format.background = {};
+            mi.format.foreground = QColor{};
+            mi.format.background = QBrush{};
             return false;
         }
 
