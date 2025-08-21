@@ -47,10 +47,10 @@ HexFindDialog::HexFindDialog(Type type, QHexView* parent)
 
     auto* cbfindmode = new QComboBox(this);
     cbfindmode->setObjectName(HexFindDialog::CBFINDMODE);
-    cbfindmode->addItem("Text", static_cast<int>(QHexFindMode::Text));
-    cbfindmode->addItem("Hex", static_cast<int>(QHexFindMode::Hex));
-    cbfindmode->addItem("Int", static_cast<int>(QHexFindMode::Int));
-    cbfindmode->addItem("Float", static_cast<int>(QHexFindMode::Float));
+    cbfindmode->addItem(tr("Text"), static_cast<int>(QHexFindMode::Text));
+    cbfindmode->addItem(tr("Hex"), static_cast<int>(QHexFindMode::Hex));
+    cbfindmode->addItem(tr("Int"), static_cast<int>(QHexFindMode::Int));
+    cbfindmode->addItem(tr("Float"), static_cast<int>(QHexFindMode::Float));
 
     QLineEdit *lereplace = nullptr, *lefind = new QLineEdit(this);
     lefind->setObjectName(HexFindDialog::LEFIND);
@@ -80,12 +80,12 @@ HexFindDialog::HexFindDialog(Type type, QHexView* parent)
     gbdirection->setTitle(tr("Find direction"));
     auto* gbvlayout = new QVBoxLayout(gbdirection);
 
-    auto* rball = new QRadioButton("All", gbdirection);
+    auto *rball = new QRadioButton(tr("All"), gbdirection);
     rball->setObjectName(HexFindDialog::RBALL);
-    auto* rbforward = new QRadioButton("Forward", gbdirection);
+    auto *rbforward = new QRadioButton(tr("Forward"), gbdirection);
     rbforward->setObjectName(HexFindDialog::RBFORWARD);
     rbforward->setChecked(true);
-    auto* rbbackward = new QRadioButton("Backward", gbdirection);
+    auto *rbbackward = new QRadioButton(tr("Backward"), gbdirection);
     rbbackward->setObjectName(HexFindDialog::RBBACKWARD);
 
     gbvlayout->addWidget(rball);
@@ -338,7 +338,7 @@ bool HexFindDialog::prepareOptions(QString& q, QHexFindMode& mode,
 }
 
 void HexFindDialog::prepareTextMode(QLayout* l) {
-    auto* cbcasesensitive = new QCheckBox("Case sensitive");
+    auto *cbcasesensitive = new QCheckBox(tr("Case sensitive"));
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
     connect(cbcasesensitive, &QCheckBox::checkStateChanged, this,
