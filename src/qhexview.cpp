@@ -355,6 +355,15 @@ void QHexView::showReplace() {
 }
 #endif
 
+void QHexView::invertByteOrder() {
+    if(m_options.hasFlag(QHexFlags::InvertedByteOrder))
+        m_options.flags &= ~QHexFlags::InvertedByteOrder;
+    else
+        m_options.flags |= QHexFlags::InvertedByteOrder;
+
+    this->checkAndUpdate();
+}
+
 void QHexView::undo() {
     if(m_hexdocument)
         m_hexdocument->undo();

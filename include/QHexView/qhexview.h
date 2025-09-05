@@ -121,6 +121,7 @@ public Q_SLOTS:
     void showFind();
     void showReplace();
 #endif
+    void invertByteOrder();
     void undo();
     void redo();
     void cut(bool hex = false);
