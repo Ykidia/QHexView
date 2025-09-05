@@ -397,16 +397,16 @@ void QHexView::copyVisual() const {
 
             for(unsigned int byteidx = 0u; byteidx < m_options.group_length;
                 byteidx++, col++) {
-                qint64 pos = this->positionFromLineCol(line, col);
+                qint64 adjcol,
+                    pos = this->positionFromLineCol(line, col, adjcol);
 
                 if(m_hexdocument->accept(pos)) {
-                    s +=
-                        (i + col) >= nbytes
-                            ? "  "
-                            : QString{
-                                  QHexUtils::toHex(
-                                      bytes[static_cast<unsigned int>(i + col)])
-                                      .toUpper()};
+                    s += (i + adjcol) >= nbytes
+                             ? "  "
+                             : QString{QHexUtils::toHex(
+                                           bytes[static_cast<unsigned int>(
+                                               i + adjcol)])
+                                           .toUpper()};
                 }
                 else
                     s += QString(m_options.invalid_char).repeated(2);
@@ -416,13 +416,13 @@ void QHexView::copyVisual() const {
         s += " ";
 
         for(unsigned int col = 0u; col < m_options.line_length; col++) {
-            qint64 pos = this->positionFromLineCol(line, col);
+            qint64 adjcol, pos = this->positionFromLineCol(line, col, adjcol);
 
             if(m_hexdocument->accept(pos)) {
-                s += (i + col) >= nbytes
+                s += (i + adjcol) >= nbytes
                          ? QChar{' '}
-                         : (QChar::isPrint(bytes[static_cast<int>(i + col)])
-                                ? QChar{bytes[static_cast<int>(i + col)]}
+                         : (QChar::isPrint(bytes[static_cast<int>(i + adjcol)])
+                                ? QChar{bytes[static_cast<int>(i + adjcol)]}
                                 : m_options.unprintable_char);
             }
             else
@@ -931,16 +931,17 @@ void QHexView::drawHexPart(PaintContext* ctx, const QByteArray& linebytes,
             byteidx++, col++) {
             QString s;
             quint8 b{};
-            qint64 pos = this->positionFromLineCol(line, col);
+            qint64 adjcol, pos = this->positionFromLineCol(line, col, adjcol);
 
             if(m_hexdocument->accept(pos)) {
                 s = linebytes.isEmpty() ||
-                            col >= static_cast<qint64>(linebytes.size())
+                            adjcol >= static_cast<qint64>(linebytes.size())
                         ? "  "
-                        : QString(QHexUtils::toHex(linebytes.mid(col, 1))
+                        : QString(QHexUtils::toHex(linebytes.mid(adjcol, 1))
                                       .toUpper());
-                b = static_cast<int>(col) < linebytes.size() ? linebytes.at(col)
-                                                             : 0x00;
+                b = static_cast<int>(adjcol) < linebytes.size()
+                        ? linebytes.at(adjcol)
+                        : 0x00;
             }
             else
                 s = QString(m_options.invalid_char).repeated(2);
@@ -960,17 +961,20 @@ void QHexView::drawAsciiPart(PaintContext* ctx, const QByteArray& linebytes,
     for(unsigned int col = 0u; col < m_options.line_length; col++) {
         QString s;
         quint8 b{};
+        qint64 adjcol;
 
-        if(m_hexdocument->accept(this->positionFromLineCol(line, col))) {
+        if(m_hexdocument->accept(
+               this->positionFromLineCol(line, col, adjcol))) {
             s = linebytes.isEmpty() ||
-                        col >= static_cast<qint64>(linebytes.size())
+                        adjcol >= static_cast<qint64>(linebytes.size())
                     ? QChar{' '}
-                    : (QChar::isPrint(linebytes.at(col))
-                           ? QChar{linebytes.at(col)}
+                    : (QChar::isPrint(linebytes.at(adjcol))
+                           ? QChar{linebytes.at(adjcol)}
                            : m_options.unprintable_char);
 
-            b = static_cast<int>(col) < linebytes.size() ? linebytes.at(col)
-                                                         : 0x00;
+            b = static_cast<int>(adjcol) < linebytes.size()
+                    ? linebytes.at(adjcol)
+                    : 0x00;
         }
         else
             s = m_options.invalid_char;
@@ -1139,9 +1143,11 @@ qreal QHexView::lineWidth() const {
 
 qreal QHexView::lineHeight() const { return m_fontmetrics.height(); }
 
-qint64 QHexView::positionFromLineCol(qint64 line, qint64 col) const {
+qint64 QHexView::positionFromLineCol(qint64 line, qint64 col,
+                                     qint64& adjcol) const {
     if(m_hexdocument) {
-        return qMin((line * m_options.line_length) + col,
+        adjcol = QHexUtils::adjustColumn(&m_options, col);
+        return qMin(line * m_options.line_length + adjcol,
                     m_hexdocument->length());
     }
 

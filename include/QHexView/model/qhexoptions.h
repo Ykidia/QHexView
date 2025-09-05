@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <QBrush>
@@ -7,23 +8,26 @@
 
 namespace QHexFlags {
 
+// clang-format off
 enum : unsigned int {
-    None = (1 << 0),
-    HSeparator = (1 << 1),
-    VSeparator = (1 << 2),
-    StyledHeader = (1 << 3),
-    StyledAddress = (1 << 4),
-    NoHeader = (1 << 5),
-    HighlightAddress = (1 << 6),
-    HighlightColumn = (1 << 7),
-    PaddedAddress = (1 << 8),
-    PaddedHighlight = (1 << 9),
+    None              = 1 << 0,
+    HSeparator        = 1 << 1,
+    VSeparator        = 1 << 2,
+    StyledHeader      = 1 << 3,
+    StyledAddress     = 1 << 4,
+    NoHeader          = 1 << 5,
+    HighlightAddress  = 1 << 6,
+    HighlightColumn   = 1 << 7,
+    PaddedAddress     = 1 << 8,
+    PaddedHighlight   = 1 << 9,
+    InvertedByteOrder = 1 << 10,
 
     Separators = HSeparator | VSeparator,
-    Styled = StyledHeader | StyledAddress,
+    Styled     = StyledHeader | StyledAddress,
 };
+// clang-format on
 
-}
+} // namespace QHexFlags
 
 struct QHexCharFormat {
     QBrush background;

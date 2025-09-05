@@ -61,6 +61,7 @@ bool isHex(char ch);
 QByteArray toHex(quint8 b);
 QByteArray toHex(const QByteArray& ba, char sep);
 QByteArray toHex(const QByteArray& ba);
+qint64 adjustColumn(const QHexOptions* options, qint64 col);
 qint64 positionToOffset(const QHexOptions* options, QHexPosition pos);
 QHexPosition offsetToPosition(const QHexOptions* options, qint64 offset);
 bool checkPattern(const QString& s);

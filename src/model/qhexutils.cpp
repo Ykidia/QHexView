@@ -352,8 +352,20 @@ QByteArray toHex(const QByteArray& ba, char sep) {
 
 QByteArray toHex(const QByteArray& ba) { return QHexUtils::toHex(ba, '\0'); }
 
+qint64 adjustColumn(const QHexOptions* options, qint64 col) {
+    if(!options->hasFlag(QHexFlags::InvertedByteOrder) ||
+       options->group_length <= 1)
+        return col;
+
+    qint64 grpstart = (col / options->group_length) * options->group_length;
+    qint64 grpoff = col % options->group_length;
+    qint64 swpoff = options->group_length - 1 - grpoff;
+    return grpstart + swpoff;
+}
+
 qint64 positionToOffset(const QHexOptions* options, QHexPosition pos) {
-    return options->line_length * pos.line + pos.column;
+    return options->line_length * pos.line +
+           QHexUtils::adjustColumn(options, pos.column);
 }
 
 QHexPosition offsetToPosition(const QHexOptions* options, qint64 offset) {

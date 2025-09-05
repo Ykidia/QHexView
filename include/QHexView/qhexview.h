@@ -170,7 +170,7 @@ private:
     qreal cellWidth() const;
     qreal lineWidth() const;
     qreal lineHeight() const;
-    qint64 positionFromLineCol(qint64 line, qint64 col) const;
+    qint64 positionFromLineCol(qint64 line, qint64 col, qint64& adjcol) const;
     QHexPosition positionFromPoint(QPoint pt) const;
     QPoint absolutePoint(QPoint pt) const;
     QHexArea areaFromPoint(QPoint pt) const;
