@@ -186,7 +186,7 @@ qint64 findDefault(const QByteArray& value, qint64 startoffset,
     if(value.size() > hexdocument->length())
         return -1;
 
-    return findIter(
+    return QHexUtils::findIter(
         startoffset, fd, hexview,
         [options, value, hexdocument](qint64 idx, qint64& offset) -> bool {
             for(auto i = 0; i < value.size(); i++) {
